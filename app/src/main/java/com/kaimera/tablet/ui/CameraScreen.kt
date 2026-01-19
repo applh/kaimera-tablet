@@ -1,47 +1,54 @@
 package com.kaimera.tablet.ui
 
 import android.Manifest
-import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
-import android.content.pm.PackageManager
-import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
-import android.view.ViewGroup
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
-import androidx.camera.video.VideoRecordEvent
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.FlashAuto
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.rounded.Stop
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,532 +56,636 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.requiredWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import coil.compose.AsyncImage
+import com.kaimera.tablet.data.UserPreferencesRepository
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.core.util.Consumer
+import androidx.camera.video.VideoRecordEvent
 
-enum class CameraMode {
-    PHOTO, VIDEO
-}
-
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    
-    val permissions = remember {
-        listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
-    }
+    val scope = rememberCoroutineScope()
+    val userPreferences = remember { UserPreferencesRepository(context) }
 
-    var hasPermissions by remember {
-        mutableStateOf(
-            permissions.all {
-                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
-            }
+    val gridRows by userPreferences.gridRows.collectAsState(initial = 0)
+    val gridCols by userPreferences.gridCols.collectAsState(initial = 0)
+    val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
+    val flashModePref by userPreferences.flashMode.collectAsState(initial = 0)
+
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
         )
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { perms ->
-            hasPermissions = perms.values.all { it }
-        }
     )
 
     LaunchedEffect(Unit) {
-        if (!hasPermissions) {
-            launcher.launch(permissions.toTypedArray())
-        }
+        permissionsState.launchMultiplePermissionRequest()
     }
 
-    if (hasPermissions) {
-        CameraContent(context, lifecycleOwner, onNavigateToGallery)
+    if (permissionsState.allPermissionsGranted) {
+        CameraContent(
+            context = context,
+            lifecycleOwner = lifecycleOwner,
+            onNavigateToGallery = onNavigateToGallery,
+            gridRows = gridRows,
+            gridCols = gridCols,
+            timerSeconds = timerSeconds,
+            flashModePref = flashModePref,
+            onFlashModeChange = { newMode -> 
+                scope.launch { userPreferences.setFlashMode(newMode) }
+            }
+        )
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Camera and Audio permissions are required.")
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Camera permissions required")
+                Button(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
+                    Text("Grant Permissions")
+                }
+            }
         }
     }
 }
 
 @Composable
 fun CameraContent(
-    context: Context, 
+    context: Context,
     lifecycleOwner: LifecycleOwner,
-    onNavigateToGallery: () -> Unit
+    onNavigateToGallery: () -> Unit,
+    gridRows: Int,
+    gridCols: Int,
+    timerSeconds: Int,
+    flashModePref: Int,
+    onFlashModeChange: (Int) -> Unit
 ) {
+    // CameraProvider State
+    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    
+    var preview by remember { mutableStateOf<Preview?>(null) }
+    var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
+    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
+    var recording by remember { mutableStateOf<Recording?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var zoomRatio by remember { mutableFloatStateOf(1f) }
     var maxZoomRatio by remember { mutableFloatStateOf(1f) }
-    var cameraMode by remember { mutableStateOf(CameraMode.PHOTO) }
+    var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video
     var isRecording by remember { mutableStateOf(false) }
-    var recordingDuration by remember { mutableStateOf("00:00") }
-    var activeRecording by remember { mutableStateOf<Recording?>(null) }
 
-    val imageCapture = remember { ImageCapture.Builder().build() }
-    val videoCapture = remember { 
-        val recorder = Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-            .build()
-        VideoCapture.withOutput(recorder)
-    }
-    val preview = remember { Preview.Builder().build() }
+    // Timer State
+    var isTimerRunning by remember { mutableStateOf(false) }
+    var timerCountdown by remember { mutableStateOf(0) }
     
-    // We need a reference to the camera to set zoom
-    var cameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
-    var cameraInfo by remember { mutableStateOf<androidx.camera.core.CameraInfo?>(null) }
+    // Recording Duration
+    var recordingDurationNanos by remember { mutableLongStateOf(0L) }
 
-    // Last captured image URI for thumbnail
-    var lastCapturedUri by remember { mutableStateOf<Uri?>(null) }
+    // Focus State
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
+    
+    // Flash State (Camera Control)
+    var currentCameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
+    
+    // Update Camera Flash Mode based on Preference
+    LaunchedEffect(currentCameraControl, flashModePref, cameraMode) {
+        currentCameraControl?.let { control ->
+            if (cameraMode == 0) { // Photo Mode
+                imageCapture?.flashMode = when(flashModePref) {
+                    1 -> ImageCapture.FLASH_MODE_ON
+                    2 -> ImageCapture.FLASH_MODE_AUTO
+                    else -> ImageCapture.FLASH_MODE_OFF
+                }
+                control.enableTorch(false) 
+            } else { // Video Mode
+                 control.enableTorch(flashModePref == 1)
+            }
+        }
+    }
 
-    // Load last image on start
+    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    
+    // Thumbnail State
+    var lastImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    
     LaunchedEffect(Unit) {
-        lastCapturedUri = loadLastImage(context)
+        lastImageUri = getLastImageUri(context)
+    }
+
+    // Timer Logic for Shutter Delay
+    LaunchedEffect(isTimerRunning) {
+        if (isTimerRunning) {
+            while (timerCountdown > 0) {
+                delay(1000)
+                timerCountdown--
+            }
+            isTimerRunning = false
+            if (cameraMode == 0) {
+                takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                    lastImageUri = uri
+                }
+            } else {
+                isRecording = true // Trigger actual recording start
+            }
+        }
+    }
+    
+    // Video Recording Logic
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            val videoCap = videoCapture ?: return@LaunchedEffect
+            val newRecording = startRecording(context, videoCap, cameraExecutor) { event ->
+                if (event is VideoRecordEvent.Status) {
+                   recordingDurationNanos = event.recordingStats.recordedDurationNanos
+                } else if (event is VideoRecordEvent.Finalize) {
+                   if (!event.hasError()) {
+                       val uri = event.outputResults.outputUri
+                       if (uri != android.net.Uri.EMPTY) {
+                           lastImageUri = uri
+                       }
+                       val msg = "Video capture succeeded: ${event.outputResults.outputUri}"
+                       Log.d("CameraScreen", msg)
+                   } else {
+                       recording?.close()
+                       recording = null
+                       Log.e("CameraScreen", "Video capture failed: ${event.error}")
+                   }
+                }
+            }
+            recording = newRecording
+        } else {
+            recording?.stop()
+            recording = null
+            recordingDurationNanos = 0L
+        }
+    }
+
+    // Dynamic Camera Re-binding logic
+    LaunchedEffect(cameraProvider, lensFacing, cameraMode) {
+        val provider = cameraProvider ?: return@LaunchedEffect
+        val prev = preview ?: return@LaunchedEffect
+        
+        try {
+            provider.unbindAll()
+            val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+            
+            val camera = if (cameraMode == 0) {
+                 val imgCap = imageCapture ?: return@LaunchedEffect
+                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, imgCap)
+            } else {
+                 val vidCap = videoCapture ?: return@LaunchedEffect
+                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, vidCap)
+            }
+            
+            currentCameraControl = camera.cameraControl
+            
+            camera.cameraInfo.zoomState.observe(lifecycleOwner) { state ->
+                zoomRatio = state.zoomRatio
+                maxZoomRatio = state.maxZoomRatio
+            }
+            
+        } catch (exc: Exception) {
+            Log.e("CameraScreen", "Camera binding failed", exc)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
+            modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 val previewView = PreviewView(ctx)
-                previewView.layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+
                 cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
+                    val provider = cameraProviderFuture.get()
+                    cameraProvider = provider
                     
-                    val cameraSelector = CameraSelector.Builder()
-                        .requireLensFacing(lensFacing)
-                        .build()
-
-                        try {
-                        cameraProvider.unbindAll()
-                        
-                        val useCases = mutableListOf<androidx.camera.core.UseCase>(preview)
-                        if (cameraMode == CameraMode.PHOTO) {
-                            useCases.add(imageCapture)
-                        } else {
-                            useCases.add(videoCapture)
-                        }
-
-                        val camera = cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            cameraSelector,
-                            *useCases.toTypedArray()
-                        )
-                        cameraControl = camera.cameraControl
-                        cameraInfo = camera.cameraInfo
-                        preview.setSurfaceProvider(previewView.surfaceProvider)
-                        
-                        // Observe Zoom State
-                        cameraInfo?.zoomState?.observe(lifecycleOwner) { state ->
-                            zoomRatio = state.zoomRatio
-                            maxZoomRatio = state.maxZoomRatio
-                        }
-                    } catch (exc: Exception) {
-                        Log.e("CameraScreen", "Use case binding failed", exc)
+                    val previewUseCase = Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                        preview = it
                     }
+
+                    val imageCaptureUseCase = ImageCapture.Builder()
+                        .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                        .build()
+                    imageCapture = imageCaptureUseCase
+
+                    val recorder = Recorder.Builder()
+                        .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                        .build()
+                    val videoCaptureUseCase = VideoCapture.withOutput(recorder)
+                    videoCapture = videoCaptureUseCase
+
+                    val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                    
+                    previewView.setOnTouchListener { view, event ->
+                            if (event.action == android.view.MotionEvent.ACTION_UP) {
+                                val factory = previewView.meteringPointFactory
+                                val point = factory.createPoint(event.x, event.y)
+                                val action = FocusMeteringAction.Builder(point).build()
+                                currentCameraControl?.startFocusAndMetering(action)
+                                view.performClick()
+                            }
+                            true
+                        }
+
                 }, ContextCompat.getMainExecutor(ctx))
+
                 previewView
             },
-            modifier = Modifier.fillMaxSize(),
-            update = { 
-                // In a real app we might update bindings here if lensFacing changes
-            }
+            update = { }
         )
+
+        // Focus Indicator
+        focusPoint?.let { offset ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                 Canvas(modifier = Modifier.fillMaxSize()) {
+                      drawCircle(Color.Yellow, radius = 30f, center = offset, style = Stroke(width = 3f))
+                 }
+            }
+        }
         
-        // Re-bind camera when lensFacing changes
-        LaunchedEffect(lensFacing) {
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
-                val cameraSelector = CameraSelector.Builder()
-                    .requireLensFacing(lensFacing)
-                    .build()
-                try {
-                    cameraProvider.unbindAll()
-                    
-                    val useCases = mutableListOf<androidx.camera.core.UseCase>(preview)
-                    if (cameraMode == CameraMode.PHOTO) {
-                        useCases.add(imageCapture)
-                    } else {
-                        useCases.add(videoCapture)
+        // Grid Overlay
+        if (gridRows > 0 || gridCols > 0) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+                
+                if (gridRows > 0) {
+                    val rowHeight = height / (gridRows + 1)
+                    for (i in 1..gridRows) {
+                        val y = rowHeight * i
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.5f),
+                            start = Offset(0f, y),
+                            end = Offset(width, y),
+                            strokeWidth = 2f
+                        )
                     }
-
-                    val camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        *useCases.toTypedArray()
-                    )
-                    cameraControl = camera.cameraControl
-                    cameraInfo = camera.cameraInfo
-                } catch (exc: Exception) {
-                     Log.e("CameraScreen", "Camera rebind failed", exc)
                 }
-            }, ContextCompat.getMainExecutor(context))
+                
+                if (gridCols > 0) {
+                    val colWidth = width / (gridCols + 1)
+                    for (i in 1..gridCols) {
+                        val x = colWidth * i
+                         drawLine(
+                            color = Color.White.copy(alpha = 0.5f),
+                            start = Offset(x, 0f),
+                            end = Offset(x, height),
+                            strokeWidth = 2f
+                        )
+                    }
+                }
+            }
         }
 
-        // Re-bind when mode changes
-        LaunchedEffect(cameraMode) {
-            // This is largely duplicated, but necessary to switch use cases
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
-                val cameraSelector = CameraSelector.Builder()
-                    .requireLensFacing(lensFacing)
-                    .build()
-                try {
-                    cameraProvider.unbindAll()
-                    val useCases = mutableListOf<androidx.camera.core.UseCase>(preview)
-                    if (cameraMode == CameraMode.PHOTO) {
-                        useCases.add(imageCapture)
-                    } else {
-                        useCases.add(videoCapture)
-                    }
-
-                    val camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        *useCases.toTypedArray()
-                    )
-                    cameraControl = camera.cameraControl
-                    cameraInfo = camera.cameraInfo
-                } catch (exc: Exception) {
-                     Log.e("CameraScreen", "Camera rebind failed", exc)
-                }
-            }, ContextCompat.getMainExecutor(context))
-        }
-
-        // Overlay UI
-        Box(
+        // Overlay Controls - Updated Polished Layout
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .systemBarsPadding() // Add margin for system bars
+                .padding(vertical = 16.dp), // Extra margin for aesthetics
+            horizontalArrangement = Arrangement.End
         ) {
-            // Top Controls (Flash, Grid placeholder) - Kept at top center or left? 
-            // User said "system icons toolbar shows at the bottom... avoid this area".
-            // Let's put them at the top center for now, horizontal.
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                 if (isRecording) {
-                    Text(text = recordingDuration, color = Color.Red, style = MaterialTheme.typography.titleMedium)
-                } else {
-                    Row {
-                        Text(
-                            text = "Photo",
-                            color = if (cameraMode == CameraMode.PHOTO) Color.Yellow else Color.White,
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .clickable { cameraMode = CameraMode.PHOTO }
-                        )
-                        Text(
-                            text = "|",
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Video",
-                            color = if (cameraMode == CameraMode.VIDEO) Color.Yellow else Color.White,
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .clickable { cameraMode = CameraMode.VIDEO }
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.weight(1f))
 
-            // Right Side Controls
+            // Sidebar Surface
             Row(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp), // Add some padding from the edge
+                    .fillMaxHeight()
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Zoom Control
+                // 1. Vertical Zoom Slider Column
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = String.format(Locale.US, "%.1fx", zoomRatio),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    // Zoom Slider (Vertical)
-                    // We use BoxWithConstraints to get the available height for the 30% requirement 
-                    // relative to the screen/parent, but here we are in a Row, so fillMaxHeight might not work 
-                    // as expected if the Row is centered.
-                    // Better to just set the height of this container to a fixed 30% of screen height
-                    // or just use a weight if the parent column was full height.
-                    // Since parent is Box.fillMaxSize -> Row.align(CenterEnd), the Row wraps content.
-                    // We can use LocalConfiguration to get screen height or just use a fixed large size
-                    // approximating typical tablet use, OR use fillMaxHeight(0.3f) on this specific element if we wrap it in a box that fills height.
+                    Icon(Icons.Filled.ZoomIn, "Zoom In", tint = Color.White, modifier = Modifier.size(20.dp))
                     
-                    // Simpler approach: Fixed height that looks like ~30% on tablet (approx 300-400dp).
-                    // Or properly: BoxWithConstraints on the top level box to pass height down. 
-                    // But for this change, let's use a reasonably large fixed height or try relative.
-                    // Let's use 300.dp as a safe bet for "30% of a tablet height" (800dp - 1200dp).
-                    
-                    // Zoom Slider (Vertical)
-                    val configuration = LocalConfiguration.current
-                    val screenHeight = configuration.screenHeightDp.dp
-                    val sliderHeight = screenHeight * 0.3f
-
-                    Text(
-                        text = String.format(Locale.US, "%.1fx", maxZoomRatio),
-                        color = Color.White, 
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(bottom=4.dp)
-                    )
-
+                    // Vertical Slider using Layout to rotate constraints properly
+                    // Simple rotation approach
                     Box(
-                        contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .width(40.dp)
-                            .height(sliderHeight) // Dynamic height
+                            .height(200.dp)
+                            .width(60.dp), // Increased width for better touch target/thumb
+                        contentAlignment = Alignment.Center
                     ) {
                         Slider(
                             value = zoomRatio,
-                            onValueChange = { cameraControl?.setZoomRatio(it) },
+                            onValueChange = { 
+                                zoomRatio = it
+                                currentCameraControl?.setZoomRatio(it)
+                            },
                             valueRange = 1f..maxZoomRatio,
                             modifier = Modifier
-                                .graphicsLayer {
-                                    rotationZ = -90f
-                                }
-                                .requiredWidth(sliderHeight) // Use requiredWidth to ignore parent constraint
+                                .rotate(-90f)
+                                .requiredWidth(200.dp) // Use requiredWidth to bypass 60dp constraint
                         )
                     }
-                    
-                    Text(
-                        text = "1x", 
-                        color = Color.White, 
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(top=4.dp)
-                    )
+
+                    Icon(Icons.Filled.ZoomOut, "Zoom Out", tint = Color.White, modifier = Modifier.size(20.dp))
                 }
 
-                Spacer(modifier = Modifier.width(24.dp))
-
-                // Action Buttons Column
+                // 2. Main Controls Column
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(32.dp),
+                    modifier = Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween, // Distribute Top/Center/Bottom
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Gallery Thumbnail
-                    IconButton(
-                        onClick = { onNavigateToGallery() },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        if (lastCapturedUri != null) {
-                            AsyncImage(
-                                model = lastCapturedUri,
-                                contentDescription = "Gallery",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .border(1.dp, Color.White, CircleShape)
+                    // TOP: Flash, Flip
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                         IconButton(onClick = { 
+                            val newMode = (flashModePref + 1) % 3 
+                            onFlashModeChange(newMode)
+                        }) {
+                            Icon(
+                                imageVector = when(flashModePref) {
+                                    1 -> Icons.Filled.FlashOn
+                                    2 -> Icons.Filled.FlashAuto
+                                    else -> Icons.Filled.FlashOff
+                                },
+                                contentDescription = "Flash",
+                                tint = Color.White
                             )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha=0.5f), CircleShape)
-                                    .border(1.dp, Color.White, CircleShape)
-                            )
+                        }
+                        
+                         IconButton(onClick = {
+                            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
+                        }) {
+                            Icon(Icons.Filled.Cameraswitch, contentDescription = "Switch Camera", tint = Color.White)
                         }
                     }
 
-                    // Shutter/Record Button
-                    FloatingActionButton(
-                        onClick = { 
-                            if (cameraMode == CameraMode.PHOTO) {
-                                takePhoto(imageCapture, context) { uri ->
-                                    lastCapturedUri = uri
-                                }
-                            } else {
-                                if (isRecording) {
-                                    activeRecording?.stop()
-                                    isRecording = false
-                                } else {
-                                    activeRecording = startRecording(videoCapture, context) { event ->
-                                        if (event is VideoRecordEvent.Finalize) {
-                                            if (!event.hasError()) {
-                                                lastCapturedUri = event.outputResults.outputUri
+                    // CENTER: Shutter & Mode
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Compact Mode Switch
+                        Row(
+                            modifier = Modifier
+                                .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CompactModeButton(
+                                icon = Icons.Filled.PhotoCamera,
+                                isSelected = cameraMode == 0,
+                                onClick = { cameraMode = 0 }
+                            )
+                            CompactModeButton(
+                                icon = Icons.Filled.Videocam,
+                                isSelected = cameraMode == 1,
+                                onClick = { cameraMode = 1 }
+                            )
+                        }
+
+                        // Shutter Button
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                             IconButton(
+                                onClick = {
+                                    if (cameraMode == 1) {
+                                        if (isRecording) {
+                                            isRecording = false // This triggers the LaunchedEffect to stop
+                                        } else {
+                                            if (timerSeconds > 0) {
+                                                isTimerRunning = true
+                                                timerCountdown = timerSeconds
+                                            } else {
+                                                isRecording = true // This triggers the LaunchedEffect to start
                                             }
-                                            isRecording = false
-                                            activeRecording = null
-                                        } else if (event is VideoRecordEvent.Status) {
-                                            val stats = event.recordingStats
-                                            val minutes = java.util.concurrent.TimeUnit.NANOSECONDS.toMinutes(stats.recordedDurationNanos)
-                                            val seconds = java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(stats.recordedDurationNanos) % 60
-                                            recordingDuration = String.format("%02d:%02d", minutes, seconds)
+                                        }
+                                    } else {
+                                        if (timerSeconds > 0) {
+                                            isTimerRunning = true
+                                            timerCountdown = timerSeconds
+                                        } else {
+                                            takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                                                 lastImageUri = uri
+                                            }
                                         }
                                     }
-                                    isRecording = true
-                                }
+                                },
+                                modifier = Modifier.size(80.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (cameraMode == 1 && isRecording) Icons.Filled.Stop else Icons.Filled.PhotoCamera,
+                                    contentDescription = "Capture",
+                                    tint = if (cameraMode == 1) Color.Red else Color.White,
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
-                        },
-                        containerColor = if (cameraMode == CameraMode.VIDEO && isRecording) Color.Red else Color.White,
-                        contentColor = if (cameraMode == CameraMode.VIDEO && isRecording) Color.White else Color.Black,
-                        modifier = Modifier.size(72.dp)
-                    ) {
-                        if (cameraMode == CameraMode.PHOTO) {
-                            Icon(Icons.Default.PhotoCamera, "Take Photo")
-                        } else {
-                            if (isRecording) {
-                                Icon(Icons.Rounded.Stop, "Stop Recording")
-                            } else {
-                                Icon(Icons.Default.Videocam, "Record Video")
+                            
+                            // Recording Duration Label
+                            if (cameraMode == 1 && isRecording) {
+                                Text(
+                                    text = formatDuration(recordingDurationNanos),
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
                             }
                         }
                     }
 
-                    // Switch Camera
+                    // BOTTOM: Gallery (Aligned with Shutter somewhat or just at bottom)
+                    // Pushed to bottom by SpaceBetween
                     IconButton(
-                        onClick = {
-                            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                                CameraSelector.LENS_FACING_FRONT
-                            } else {
-                                CameraSelector.LENS_FACING_BACK
-                            }
-                        }
+                        onClick = onNavigateToGallery,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .background(Color.DarkGray, CircleShape)
                     ) {
-                        Icon(Icons.Default.Cameraswitch, "Switch Camera", tint = Color.White, modifier = Modifier.size(32.dp))
+                        if (lastImageUri != null) {
+                            coil.compose.AsyncImage(
+                                model = lastImageUri,
+                                contentDescription = "Gallery",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                            )
+                        }
                     }
                 }
             }
+        }
+            
+        // Timer Countdown Display (Centered)
+        if (isTimerRunning) {
+             Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+             ) {
+                 Text(
+                    text = "$timerCountdown",
+                    style = MaterialTheme.typography.displayLarge,
+                    color = Color.White,
+                    fontSize = 120.sp
+                 )
+             }
         }
     }
 }
 
-private fun startRecording(
-    videoCapture: VideoCapture<Recorder>,
-    context: Context,
-    onEvent: (VideoRecordEvent) -> Unit
-): Recording {
-    val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-        .format(System.currentTimeMillis())
-    val contentValues = android.content.ContentValues().apply {
-        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
-        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-        put(android.provider.MediaStore.Video.Media.RELATIVE_PATH, "Movies/Kaimera")
+@Composable
+fun CompactModeButton(
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
     }
-
-    val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
-        context.contentResolver,
-        android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-    )
-    .setContentValues(contentValues)
-    .build()
-
-    return videoCapture.output
-        .prepareRecording(context, mediaStoreOutputOptions)
-        .apply {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED) {
-                withAudioEnabled()
-            }
-        }
-        .start(ContextCompat.getMainExecutor(context), onEvent)
 }
 
 private fun takePhoto(
-    imageCapture: ImageCapture, 
     context: Context,
-    onImageSaved: (Uri) -> Unit
+    imageCapture: ImageCapture?,
+    cameraExecutor: ExecutorService,
+    onPhotoTaken: (android.net.Uri) -> Unit = {}
 ) {
     val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
         .format(System.currentTimeMillis())
-    val contentValues = android.content.ContentValues().apply {
-        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
-        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Kaimera")
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Kaimera")
+        }
     }
 
     val outputOptions = ImageCapture.OutputFileOptions.Builder(
         context.contentResolver,
-        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         contentValues
     ).build()
 
-    imageCapture.takePicture(
+    imageCapture?.takePicture(
         outputOptions,
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageSavedCallback {
             override fun onError(exc: ImageCaptureException) {
                 Log.e("CameraScreen", "Photo capture failed: ${exc.message}", exc)
+                Toast.makeText(context, "Photo capture failed", Toast.LENGTH_SHORT).show()
             }
 
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val msg = "Photo capture succeeded: ${output.savedUri}"
+                val msg = "Photo capture succeeded"
+                // Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 Log.d("CameraScreen", msg)
-                output.savedUri?.let { onImageSaved(it) }
+                output.savedUri?.let { onPhotoTaken(it) }
             }
         }
     )
 }
 
-private fun loadLastImage(context: Context): Uri? {
-    val collection = android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    val projection = arrayOf(android.provider.MediaStore.Images.Media._ID)
-    val sortOrder = "${android.provider.MediaStore.Images.Media.DATE_ADDED} DESC"
-    val selection = "${android.provider.MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
-    val selectionArgs = arrayOf("Pictures/Kaimera%")
-
-    context.contentResolver.query(
-        collection,
-        projection,
-        selection, // Filter for app specific folder or remove to show all
-        selectionArgs,
-        sortOrder
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val idColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media._ID)
-            val id = cursor.getLong(idColumn)
-            return ContentUris.withAppendedId(collection, id)
+private fun startRecording(
+    context: Context,
+    videoCapture: VideoCapture<Recorder>,
+    executor: ExecutorService,
+    eventListener: Consumer<VideoRecordEvent>
+): Recording {
+    val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
+        .format(System.currentTimeMillis())
+        
+    val contentValues = ContentValues().apply {
+        put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+        put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/Kaimera")
         }
     }
-    // Fallback: try querying all images if Kaimera specific query fails or is empty initially
-     context.contentResolver.query(
-        collection,
+
+    val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
+        context.contentResolver,
+        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+    ).setContentValues(contentValues)
+    .build()
+
+    return videoCapture.output
+        .prepareRecording(context, mediaStoreOutputOptions)
+        .apply {
+            if (androidx.core.content.PermissionChecker.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                androidx.core.content.PermissionChecker.PERMISSION_GRANTED)
+            {
+                withAudioEnabled()
+            }
+        }
+        .start(executor, eventListener) // USE EXECUTOR HERE
+}
+
+private fun formatDuration(nanos: Long): String {
+    val seconds = java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(nanos)
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return String.format("%02d:%02d", minutes, remainingSeconds)
+}
+
+private fun getLastImageUri(context: Context): android.net.Uri? {
+    val projection = arrayOf(
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.DATE_ADDED
+    )
+    val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+    val cursor = context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
         projection,
-        null, 
+        null,
         null,
         sortOrder
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val idColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media._ID)
-            val id = cursor.getLong(idColumn)
-            return ContentUris.withAppendedId(collection, id)
+    )
+    return cursor?.use {
+        if (it.moveToFirst()) {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val id = it.getLong(idColumn)
+            android.content.ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+        } else {
+            null
         }
     }
-    return null
 }
