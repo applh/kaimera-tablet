@@ -12,8 +12,8 @@ TAG="$2"
 
 echo "=== [1/7] Cleaning Build Artifacts ==="
 ./gradlew clean || echo "Gradle clean failed, forcing removal..."
-rm -f build.log
-rm -rf app/build .gradle/ .DS_Store
+rm -f *.log
+rm -rf app/build .gradle/ .DS_Store captures/
 
 echo "=== [2/7] Update Docs & Skills ==="
 echo "REMINDER: Ensure you have updated all relevant documentation and skills."

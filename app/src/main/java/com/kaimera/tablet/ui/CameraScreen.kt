@@ -18,6 +18,10 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
+import androidx.camera.core.CameraEffect
+import androidx.camera.core.UseCaseGroup
+import com.kaimera.tablet.rendering.FilterSurfaceProcessor
+import com.kaimera.tablet.rendering.TextureRenderer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +51,8 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -178,6 +184,23 @@ fun CameraContent(
 
     // Focus State
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
+
+    // Filter State
+    var selectedFilter by remember { mutableStateOf(TextureRenderer.FilterType.NORMAL) }
+    var filterProcessor by remember { mutableStateOf<FilterSurfaceProcessor?>(null) }
+    var showFilterMenu by remember { mutableStateOf(false) }
+
+    // Update Filter
+    LaunchedEffect(selectedFilter) {
+        filterProcessor?.setFilter(selectedFilter)
+    }
+
+    // Cleanup on dispose
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            filterProcessor?.release()
+        }
+    }
     
     // Flash State (Camera Control)
     var currentCameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
@@ -198,6 +221,9 @@ fun CameraContent(
         }
     }
 
+
+    
+
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     
     // Thumbnail State
@@ -216,7 +242,7 @@ fun CameraContent(
             }
             isTimerRunning = false
             if (cameraMode == 0) {
-                takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                takePhoto(context, imageCapture) { uri ->
                     lastImageUri = uri
                 }
             } else {
@@ -260,17 +286,48 @@ fun CameraContent(
         val provider = cameraProvider ?: return@LaunchedEffect
         val prev = preview ?: return@LaunchedEffect
         
+        Log.d("CameraScreen", "Binding camera: mode=$cameraMode, lens=$lensFacing")
         try {
             provider.unbindAll()
+            Log.d("CameraScreen", "Unbound all use cases")
+            
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
             
-            val camera = if (cameraMode == 0) {
-                 val imgCap = imageCapture ?: return@LaunchedEffect
-                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, imgCap)
-            } else {
-                 val vidCap = videoCapture ?: return@LaunchedEffect
-                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, vidCap)
-            }
+            // Clean up previous processor if exists
+            filterProcessor?.release()
+            val proc = FilterSurfaceProcessor()
+            filterProcessor = proc
+            Log.d("CameraScreen", "Created new FilterSurfaceProcessor: $proc")
+
+            // Asymmetric Targeting:
+            // Unify targets to include ALL potential use cases to prevent pipeline thrashing on mode switch.
+            // Even if a use case isn't bound (like ImageCapture in video mode), it's safe to target it.
+            val targets = CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE or CameraEffect.IMAGE_CAPTURE
+            Log.d("CameraScreen", "CameraEffect targets: $targets")
+
+            // CameraEffect is abstract/protected constructor, so we need a subclass
+            val cameraEffect = object : CameraEffect(
+                targets,
+                cameraExecutor,
+                proc,
+                { error -> Log.e("CameraScreen", "CameraEffect error: ${error.cause}", error.cause) }
+            ) {}
+            
+            val useCaseGroupBuilder = UseCaseGroup.Builder()
+            // Bind ALL use cases regardless of mode to satisfy CameraEffect targets (P+V+I).
+            // This prevents StreamSharing from failing due to missing children.
+            val imgCap = imageCapture ?: return@LaunchedEffect
+            val vidCap = videoCapture ?: return@LaunchedEffect
+            
+            useCaseGroupBuilder.addUseCase(prev)
+            useCaseGroupBuilder.addUseCase(imgCap)
+            useCaseGroupBuilder.addUseCase(vidCap)
+            useCaseGroupBuilder.addEffect(cameraEffect)
+            
+            val useCaseGroup = useCaseGroupBuilder.build()
+            Log.d("CameraScreen", "Binding to lifecycle...")
+            val camera = provider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
+            Log.d("CameraScreen", "Bind complete.")
             
             currentCameraControl = camera.cameraControl
             
@@ -295,7 +352,7 @@ fun CameraContent(
                     val provider = cameraProviderFuture.get()
                     cameraProvider = provider
                     
-                    val previewUseCase = Preview.Builder().build().also {
+                    Preview.Builder().build().also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                         preview = it
                     }
@@ -311,7 +368,7 @@ fun CameraContent(
                     val videoCaptureUseCase = VideoCapture.withOutput(recorder)
                     videoCapture = videoCaptureUseCase
 
-                    val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                    // val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
                     
                     previewView.setOnTouchListener { view, event ->
                             if (event.action == android.view.MotionEvent.ACTION_UP) {
@@ -453,6 +510,10 @@ fun CameraContent(
                         }) {
                             Icon(Icons.Filled.Cameraswitch, contentDescription = "Switch Camera", tint = Color.White)
                         }
+
+                        IconButton(onClick = { showFilterMenu = !showFilterMenu }) {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Filters", tint = if(showFilterMenu || selectedFilter != TextureRenderer.FilterType.NORMAL) Color.Yellow else Color.White)
+                        }
                     }
 
                     // CENTER: Shutter & Mode
@@ -495,7 +556,7 @@ fun CameraContent(
                                             isTimerRunning = true
                                             timerCountdown = timerSeconds
                                         } else {
-                                            takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                                            takePhoto(context, imageCapture) { uri ->
                                                  lastImageUri = uri
                                             }
                                         }
@@ -544,6 +605,31 @@ fun CameraContent(
             }
         }
             
+        // Filter Menu Overlay
+        if (showFilterMenu) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 120.dp), // Position above shutter
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Row(
+                    modifier = Modifier
+                        .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextureRenderer.FilterType.values().forEach { filter ->
+                        FilterChip(
+                            name = filter.name,
+                            isSelected = selectedFilter == filter,
+                            onClick = { selectedFilter = filter }
+                        )
+                    }
+                }
+            }
+        }
+
         // Timer Countdown Display (Centered)
         if (isTimerRunning) {
              Box(
@@ -558,6 +644,19 @@ fun CameraContent(
                  )
              }
         }
+    }
+}
+
+@Composable
+fun FilterChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray.copy(alpha = 0.5f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(name, color = Color.White, fontSize = 12.sp)
     }
 }
 
@@ -586,7 +685,6 @@ fun CompactModeButton(
 private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture?,
-    cameraExecutor: ExecutorService,
     onPhotoTaken: (android.net.Uri) -> Unit = {}
 ) {
     val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
