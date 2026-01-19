@@ -13,9 +13,12 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExposureState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class CameraViewModel : ViewModel() {
@@ -40,6 +43,17 @@ class CameraViewModel : ViewModel() {
 
     private val _shutterSpeed = MutableStateFlow(0L)
     val shutterSpeed: StateFlow<Long> = _shutterSpeed.asStateFlow()
+
+    // Advanced Modes State
+    enum class CaptureState { IDLE, BURSTING, TIMELAPSE }
+
+    private val _captureState = MutableStateFlow(CaptureState.IDLE)
+    val captureState: StateFlow<CaptureState> = _captureState.asStateFlow()
+
+    private val _capturedCount = MutableStateFlow(0)
+    val capturedCount: StateFlow<Int> = _capturedCount.asStateFlow()
+
+    private var captureJob: Job? = null
 
     private var currentCameraControl: CameraControl? = null
     private var currentCameraInfo: CameraInfo? = null
@@ -112,6 +126,57 @@ class CameraViewModel : ViewModel() {
             CameraMetadata.CONTROL_AWB_MODE_INCANDESCENT -> "Incandescent"
             CameraMetadata.CONTROL_AWB_MODE_FLUORESCENT -> "Fluorescent"
             else -> "Auto"
+        }
+    }
+
+    // --- Advanced Modes Logic ---
+
+    fun startBurst(onCapture: suspend () -> Unit) {
+        if (_captureState.value != CaptureState.IDLE) return
+        _captureState.value = CaptureState.BURSTING
+        _capturedCount.value = 0
+        captureJob = viewModelScope.launch {
+            while (isActive) {
+                try {
+                    onCapture()
+                    _capturedCount.value++
+                } catch (e: Exception) {
+                    Log.e("CameraViewModel", "Burst capture failed", e)
+                }
+                delay(50) // Reduced delay since we now wait for capture to complete. 
+                         // 50ms + CaptureTime ensures we don't overwhelm.
+            }
+        }
+    }
+
+    fun stopBurst() {
+        if (_captureState.value == CaptureState.BURSTING) {
+            captureJob?.cancel()
+            _captureState.value = CaptureState.IDLE
+        }
+    }
+
+    fun startTimelapse(intervalMillis: Long, onCapture: suspend () -> Unit) {
+        if (_captureState.value != CaptureState.IDLE) return
+        _captureState.value = CaptureState.TIMELAPSE
+        _capturedCount.value = 0
+        captureJob = viewModelScope.launch {
+            while (isActive) {
+                try {
+                    onCapture()
+                    _capturedCount.value++
+                } catch (e: Exception) {
+                     Log.e("CameraViewModel", "Timelapse capture failed", e)
+                }
+                delay(intervalMillis)
+            }
+        }
+    }
+
+    fun stopTimelapse() {
+        if (_captureState.value == CaptureState.TIMELAPSE) {
+            captureJob?.cancel()
+            _captureState.value = CaptureState.IDLE
         }
     }
 }

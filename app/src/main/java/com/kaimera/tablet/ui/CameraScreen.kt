@@ -48,6 +48,8 @@ import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
@@ -78,6 +80,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
@@ -91,8 +95,14 @@ import androidx.lifecycle.LifecycleOwner
 import com.kaimera.tablet.data.UserPreferencesRepository
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -186,8 +196,15 @@ fun CameraContent(
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var zoomRatio by remember { mutableFloatStateOf(1f) }
     var maxZoomRatio by remember { mutableFloatStateOf(1f) }
-    var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video
+    var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video, 2: Timelapse
     var isRecording by remember { mutableStateOf(false) }
+
+    // Advanced Modes State
+    val captureState by viewModel.captureState.collectAsState()
+    val capturedCount by viewModel.capturedCount.collectAsState()
+    var timelapseInterval by remember { mutableLongStateOf(1000L) } // 1 sec default
+    
+
 
     // Orientation State for UI Rotation
     var rotationDegrees by remember { mutableStateOf(0) }
@@ -276,7 +293,7 @@ fun CameraContent(
     // Update Camera Flash Mode based on Preference
     LaunchedEffect(currentCameraControl, flashModePref, cameraMode) {
         currentCameraControl?.let { control ->
-            if (cameraMode == 0) { // Photo Mode
+            if (cameraMode == 0 || cameraMode == 2) { // Photo or Timelapse
                 imageCapture?.flashMode = when(flashModePref) {
                     1 -> ImageCapture.FLASH_MODE_ON
                     2 -> ImageCapture.FLASH_MODE_AUTO
@@ -296,6 +313,25 @@ fun CameraContent(
     
     // Thumbnail State
     var lastImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+    // Capture Photo Lambda (Suspend Version)
+    val capturePhotoSuspend: suspend () -> Unit = {
+        suspendCancellableCoroutine { cont ->
+            takePhoto(context, imageCapture) { uri ->
+                lastImageUri = uri
+                if (cont.isActive) {
+                    cont.resume(Unit)
+                }
+            }
+        }
+    }
+
+    // Legacy Capture (for single tap)
+    val capturePhoto = {
+        takePhoto(context, imageCapture) { uri ->
+            lastImageUri = uri
+        }
+    }
     
     LaunchedEffect(Unit) {
         lastImageUri = getLastImageUri(context)
@@ -310,11 +346,11 @@ fun CameraContent(
             }
             isTimerRunning = false
             if (cameraMode == 0) {
-                takePhoto(context, imageCapture) { uri ->
-                    lastImageUri = uri
-                }
-            } else {
+                capturePhoto()
+            } else if (cameraMode == 1) {
                 isRecording = true // Trigger actual recording start
+            } else if (cameraMode == 2) {
+                 viewModel.startTimelapse(timelapseInterval, capturePhoto)
             }
         }
     }
@@ -644,44 +680,106 @@ fun CameraContent(
 
                         // Shutter Button
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                             IconButton(
-                                onClick = {
-                                    if (cameraMode == 1) {
-                                        if (isRecording) {
-                                            isRecording = false // This triggers the LaunchedEffect to stop
-                                        } else {
-                                            if (timerSeconds > 0) {
-                                                isTimerRunning = true
-                                                timerCountdown = timerSeconds
-                                            } else {
-                                                isRecording = true // This triggers the LaunchedEffect to start
+                             val isBursting = captureState == CameraViewModel.CaptureState.BURSTING
+                             val isTimelapseRunning = captureState == CameraViewModel.CaptureState.TIMELAPSE
+                             
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .pointerInput(cameraMode, timerSeconds, isRecording, timelapseInterval) {
+                                        var isBurstAction = false
+                                        detectTapGestures(
+                                            onPress = {
+                                                isBurstAction = false
+                                                if (cameraMode == 0 && timerSeconds == 0) {
+                                                    // Only handle Burst logic if in Photo mode and No Timer
+                                                    // Wrap in coroutineScope to allow parallel launch of delay check
+                                                    // while waiting for release.
+                                                    try {
+                                                        val pressScope = this
+                                                        coroutineScope {
+                                                            val burstJob = launch {
+                                                                delay(300) // 300ms threshold for Long Press
+                                                                isBurstAction = true
+                                                                viewModel.startBurst(capturePhotoSuspend)
+                                                            }
+                                                            pressScope.tryAwaitRelease()
+                                                            burstJob.cancel()
+                                                        }
+                                                    } finally {
+                                                        if (isBurstAction) {
+                                                            viewModel.stopBurst()
+                                                        }
+                                                    }
+                                                } else {
+                                                    // Non-burst modes (Video, Timelapse, or Timer enabled)
+                                                    // Just wait for release
+                                                    tryAwaitRelease()
+                                                }
+                                            },
+                                            onTap = {
+                                                if (!isBurstAction) {
+                                                    if (cameraMode == 0) {
+                                                         if (timerSeconds > 0) {
+                                                            isTimerRunning = true
+                                                            timerCountdown = timerSeconds
+                                                         } else {
+                                                             capturePhoto()
+                                                         }
+                                                    } else if (cameraMode == 1) { // Video
+                                                        if (isRecording) {
+                                                            isRecording = false
+                                                        } else {
+                                                            if (timerSeconds > 0) {
+                                                                isTimerRunning = true
+                                                                timerCountdown = timerSeconds
+                                                            } else {
+                                                                isRecording = true
+                                                            }
+                                                        }
+                                                    } else if (cameraMode == 2) { // Timelapse
+                                                        // Check FRESH state directly from ViewModel to avoid stale closure if pointerInput doesn't restart
+                                                        if (viewModel.captureState.value == CameraViewModel.CaptureState.TIMELAPSE) {
+                                                            viewModel.stopTimelapse()
+                                                        } else {
+                                                             if (timerSeconds > 0) {
+                                                                isTimerRunning = true
+                                                                timerCountdown = timerSeconds
+                                                            } else {
+                                                                viewModel.startTimelapse(timelapseInterval, capturePhotoSuspend)
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
-                                        }
-                                    } else {
-                                        if (timerSeconds > 0) {
-                                            isTimerRunning = true
-                                            timerCountdown = timerSeconds
-                                        } else {
-                                            takePhoto(context, imageCapture) { uri ->
-                                                 lastImageUri = uri
-                                            }
-                                        }
+                                        )
                                     }
-                                },
-                                modifier = Modifier.size(80.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (cameraMode == 1 && isRecording) Icons.Filled.Stop else Icons.Filled.PhotoCamera,
+                                    imageVector = when {
+                                        cameraMode == 1 && isRecording -> Icons.Filled.Stop
+                                        cameraMode == 2 && isTimelapseRunning -> Icons.Filled.Stop
+                                        cameraMode == 2 -> Icons.Filled.Timelapse
+                                        else -> Icons.Filled.PhotoCamera
+                                    },
                                     contentDescription = "Capture",
-                                    tint = if (cameraMode == 1) Color.Red else Color.White,
+                                    tint = if (cameraMode == 1 || isBursting || isTimelapseRunning) Color.Red else Color.White,
                                     modifier = Modifier.fillMaxSize().rotate(rotationAnimation)
                                 )
                             }
                             
-                            // Recording Duration Label
+                            // Recording Duration / Count Label
                             if (cameraMode == 1 && isRecording) {
                                 Text(
                                     text = formatDuration(recordingDurationNanos),
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            } else if (isBursting || isTimelapseRunning) {
+                                Text(
+                                    text = "$capturedCount",
                                     color = Color.Red,
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(top = 4.dp)
@@ -864,6 +962,13 @@ fun ModeSelector(
                 icon = Icons.Filled.Videocam,
                 isSelected = currentMode == 1,
                 onClick = { onModeSelected(1) }
+            )
+
+            // Timelapse Option
+            ModeIcon(
+                icon = Icons.Filled.Timelapse,
+                isSelected = currentMode == 2,
+                onClick = { onModeSelected(2) }
             )
         }
     }

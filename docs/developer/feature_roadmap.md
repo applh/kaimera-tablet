@@ -50,14 +50,19 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **White Balance**: Presets (Cloudy, Sunny, Incandescent, Fluorescent, Auto).
 - **ISO/Shutter Priority**: (If supported by hardware/Camera2Interop) Monitor and display current values.
 
-### 3.2 Advanced Modes
+### 3.2 Advanced Modes (Completed v0.0.10)
 - **QR Code Scanner**: Dedicated mode or auto-detection overlay using ML Kit or ZXing.
-- **Timelapse**: Record video with frame intervals.
+- **Timelapse**: Intervalometer for high-res image capture.
 - **Burst Mode**: Hold shutter for rapid capture.
 
 ## Phase 4: Intelligence & Polishing
 - **AI Scene Detection**: Highlight text, faces, or objects.
 - **Gallery "Film Strip"**: Horizontal film strip of recent photos at the bottom of the camera view (Dynamic).
+
+## Release History
+- **v0.0.10**: Added Burst Mode and Timelapse (Intervalometer). Fixed shutter gestures and stability.
+- **v0.0.9**: Added Pro Controls (Exposure, WB).
+
 
 ---
 
