@@ -15,6 +15,9 @@ class FilesViewModel(
     private val _uiState = MutableStateFlow<FilesUiState>(FilesUiState.Loading)
     val uiState: StateFlow<FilesUiState> = _uiState.asStateFlow()
 
+    private val _actionEffect = MutableStateFlow<FilesActionEffect?>(null)
+    val actionEffect: StateFlow<FilesActionEffect?> = _actionEffect.asStateFlow()
+
     init {
         loadData()
     }
@@ -23,17 +26,48 @@ class FilesViewModel(
         viewModelScope.launch {
             _uiState.value = FilesUiState.Loading
             try {
-                val data = repository.getImages()
+                val data = repository.getMedia()
                 _uiState.value = FilesUiState.Success(data)
             } catch (e: Exception) {
                 _uiState.value = FilesUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
+    
+    fun deleteFile(file: MediaFile) {
+        viewModelScope.launch {
+            val intentSender = repository.deleteFile(file.uri)
+            if (intentSender != null) {
+                _actionEffect.value = FilesActionEffect.RequestDeletePermission(intentSender)
+            } else {
+                // Determine success/fail, simplistically reload
+                loadData()
+            }
+        }
+    }
+
+    fun renameFile(file: MediaFile, newName: String) {
+        viewModelScope.launch {
+            val success = repository.renameFile(file.uri, newName)
+            if (success) {
+                loadData()
+            } else {
+                // Show error
+            }
+        }
+    }
+    
+    fun clearEffect() {
+        _actionEffect.value = null
+    }
 }
 
 sealed class FilesUiState {
     object Loading : FilesUiState()
-    data class Success(val images: List<Uri>) : FilesUiState()
+    data class Success(val media: List<MediaFile>) : FilesUiState()
     data class Error(val message: String) : FilesUiState()
+}
+
+sealed class FilesActionEffect {
+    data class RequestDeletePermission(val intentSender: android.content.IntentSender) : FilesActionEffect()
 }

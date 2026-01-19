@@ -4,9 +4,11 @@ This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, bu
 
 ## Key Features
 - **Launcher**: Custom grid-based app launcher.
-- **Camera Applet**: Professional camera interface with Zoom (1x-Max), Gallery Integration, and Pro controls.
+- **Camera Applet**: Professional camera interface with Video Recording, Zoom (1x-Max), Gallery Integration, and Pro controls.
 - **Settings**: Unified settings hub for system and applets.
-- **Files**: Gallery view for captured images.
+- **Files**: Gallery view for captured images and videos, with in-app playback and zoom support.
+- **Media Viewer**: Integrated full-screen player for photos (pinch-to-zoom) and videos (playback controls).
+
 
 ## Prerequisites
 

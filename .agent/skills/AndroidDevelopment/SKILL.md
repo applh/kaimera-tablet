@@ -15,6 +15,9 @@ This skill provides the necessary commands and knowledge to work with the Kaimer
 - **Android SDK**:
   - `local.properties` must exist in root.
   - `sdk.dir=/Users/<USER>/Library/Android/sdk`
+- **Permissions**:
+  - `CAMERA` and `RECORD_AUDIO` (add to `AndroidManifest.xml`).
+  - Scoped Storage (delete permission flow) for Files applet actions.
 - **Gradle**:
   - Use `./gradlew` (wrapper provided in repo).
 

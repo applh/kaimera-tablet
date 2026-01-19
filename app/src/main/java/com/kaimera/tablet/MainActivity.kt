@@ -21,10 +21,25 @@ import com.kaimera.tablet.ui.CameraScreen
 import com.kaimera.tablet.ui.LauncherScreen
 import com.kaimera.tablet.ui.SettingsScreen
 import com.kaimera.tablet.files.FilesScreen
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import com.kaimera.tablet.ui.MediaViewerScreen
+import coil.ImageLoader
+import coil.decode.VideoFrameDecoder
+import coil.Coil
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Coil for Video Thumbnails
+        val imageLoader = ImageLoader.Builder(this)
+            .components {
+                add(VideoFrameDecoder.Factory())
+            }
+            .build()
+        Coil.setImageLoader(imageLoader)
+
         setContent {
             KaimeraTabletTheme {
                 val navController = rememberNavController()
@@ -56,7 +71,29 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("files") {
-                            FilesScreen()
+                            FilesScreen(
+                                onFileOpen = { media ->
+                                    val encodedUri = java.net.URLEncoder.encode(media.uri.toString(), "UTF-8")
+                                    navController.navigate("viewer?uri=$encodedUri&isVideo=${media.isVideo}")
+                                }
+                            )
+                        }
+                        composable(
+                            route = "viewer?uri={uri}&isVideo={isVideo}",
+                            arguments = listOf(
+                                navArgument("uri") { type = NavType.StringType },
+                                navArgument("isVideo") { type = NavType.BoolType }
+                            )
+                        ) { backStackEntry ->
+                            val uriString = backStackEntry.arguments?.getString("uri")
+                            val isVideo = backStackEntry.arguments?.getBoolean("isVideo") ?: false
+                            if (uriString != null) {
+                                MediaViewerScreen(
+                                    uri = android.net.Uri.parse(uriString),
+                                    isVideo = isVideo,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
                         }
                         composable("camera_settings") {
                             com.kaimera.tablet.ui.CameraSettings()

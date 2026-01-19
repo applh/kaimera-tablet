@@ -14,6 +14,7 @@ The camera implementation is split into:
 - **CameraX Camera2**: `androidx.camera:camera-camera2`
 - **CameraX Lifecycle**: `androidx.camera:camera-lifecycle`
 - **CameraX View**: `androidx.camera:camera-view`
+- **CameraX Video**: `androidx.camera:camera-video`
 
 ## Features & Implementation Details
 
@@ -33,7 +34,15 @@ Zoom is managed via `CameraControl.setZoomRatio(float)`.
     - Clicking the thumbnail navigates to the **Files Applet** (Gallery View).
     - Image loading is handled by **Coil**.
 
-### 4. Settings Integration
+### 4. Video Recording
+- **UseCase**: `VideoCapture` with `Recorder` output.
+- **Storage**: Saves MP4s to `Movies/Kaimera`.
+- **Logic**:
+    - **Mode Switching**: Toggles between Photo/Video states.
+    - **Audio Permission**: Request `RECORD_AUDIO` at runtime.
+    - **Recording**: Uses `FileOutputOptions` (or `MediaStoreOutputOptions` for Scoped Storage) to save video.
+
+### 5. Settings Integration
 Camera settings are isolated in `CameraSettings.kt` but accessed via the main `SettingsScreen`.
 - **Current Settings**:
     - **Grid Overlay**: Helper lines for composition.

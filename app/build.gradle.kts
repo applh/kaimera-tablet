@@ -11,8 +11,8 @@ android {
         applicationId = "com.kaimera.tablet"
         minSdk = 35
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.0.5"
+        versionCode = 6
+        versionName = "0.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -68,8 +68,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
     implementation("androidx.camera:camera-extensions:$cameraxVersion")
+    implementation("androidx.camera:camera-video:$cameraxVersion")
     // Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
     // Coil
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("io.coil-kt:coil-video:2.6.0")
 }
