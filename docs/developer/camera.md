@@ -21,14 +21,17 @@ The camera implementation is split into:
 The preview is rendered using a `PreviewView` inside an `AndroidView`. It is bound to the lifecycle of the composable's `vLifecycleOwner`.
 
 ### 2. Zoom Control
-Zoom is managed via `CameraControl.setZoomRatio(float)`. A slider in the UI updates a state variable which triggers the camera control update.
-- **Range**: 1x to 4x (hardcoded for safety, can be dynamic based on `CameraInfo.getZoomState()`).
+Zoom is managed via `CameraControl.setZoomRatio(float)`. 
+- **Vertical Slider**: Located on the right side, height is dynamically set to 30% of screen height.
+- **Range**: 1x to Device Max (dynamically retrieved via `CameraInfo.getZoomState().maxZoomRatio`).
+- **Feedback**: Current zoom level displayed numerically above the slider.
 
-### 3. Image Capture
-Configuration:
-- **Format**: JPEG
-- **Storage**: `Pictures/Kaimera` directory using `MediaStore`.
-- **Naming**: Timestamp-based (`yyyy-MM-dd-HH-mm-ss-SSS`).
+### 3. Image Capture & Gallery
+- **Capture**: Saves JPEGs to `Pictures/Kaimera` with timestamp naming.
+- **Gallery Integration**: 
+    - A circular thumbnail of the last captured image is displayed.
+    - Clicking the thumbnail navigates to the **Files Applet** (Gallery View).
+    - Image loading is handled by **Coil**.
 
 ### 4. Settings Integration
 Camera settings are isolated in `CameraSettings.kt` but accessed via the main `SettingsScreen`.

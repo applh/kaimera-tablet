@@ -1,12 +1,12 @@
-# Kaimera Tablet Android App
+# Kaimera Tablet Android App (v0.0.5)
 
 This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, built using Jetpack Compose.
 
 ## Key Features
 - **Launcher**: Custom grid-based app launcher.
-- **Camera Applet**: Professional camera interface with Zoom, Pro controls, and Settings.
+- **Camera Applet**: Professional camera interface with Zoom (1x-Max), Gallery Integration, and Pro controls.
 - **Settings**: Unified settings hub for system and applets.
-- **Files**: Basic file management (Work In Progress).
+- **Files**: Gallery view for captured images.
 
 ## Prerequisites
 

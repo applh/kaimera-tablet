@@ -13,12 +13,14 @@
     - `CameraScreen`: CameraX-based capture interface with Pro features.
     - `SettingsScreen`: App-wide and applet-specific settings.
     - `CameraSettings`: Configuration for Camera applet.
+    - `FilesScreen`: Gallery grid view using Coil for image loading.
   
 ## Key Files
 - `app/src/main/java/com/kaimera/tablet/MainActivity.kt`: Navigation entry.
 - `app/src/main/java/com/kaimera/tablet/ui/LauncherScreen.kt`: Main menu.
 - `app/src/main/java/com/kaimera/tablet/ui/CameraScreen.kt`: Camera implementation.
-- `app/build.gradle.kts`: Dependency management (includes CameraX).
+- `app/src/main/java/com/kaimera/tablet/files/`: Files/Gallery implementation.
+- `app/build.gradle.kts`: Dependency management (includes CameraX, Coil).
 
 ## Environment Quirks
 - **JDK 17 STRICT**: System may have JDK 25 (incompatible). Always explicitly set `JAVA_HOME` to JDK 17 path.

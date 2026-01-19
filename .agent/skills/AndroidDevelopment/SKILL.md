@@ -47,6 +47,12 @@ adb shell am start -n com.kaimera.tablet/.MainActivity
 ./gradlew androidDependencies
 ```
 
+### 6. Release Workflow
+To cleanup, commit, and tag a release in one step:
+```bash
+.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release message" v0.0.5
+```
+
 ## Troubleshooting
 
 - **"Resource not found"**: Ensure you have pulled the full `res/` directory from git.
