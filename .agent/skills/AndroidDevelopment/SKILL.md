@@ -51,3 +51,34 @@ adb shell am start -n com.kaimera.tablet/.MainActivity
 
 - **"Resource not found"**: Ensure you have pulled the full `res/` directory from git.
 - **"JAVA_HOME is invalid"**: Verify `java -version` returns 17.x.
+
+## Session Initialization
+**REQUIRED**: At the start of every session, read the **Project Context** to understand the architecture and constraints.
+- `view_file docs/assistant/project_context.md`
+
+## Best Practices
+
+### Documentation Maintenance
+**CRITICAL**: Always update the relevant documentation after any code change.
+
+1.  **User Guide** (`docs/user/`): Update if features, UI, or installation steps change.
+2.  **Developer Guide** (`docs/developer/`): Update if build requirements, dependencies, or scripts change.
+3.  **Project Context** (`docs/assistant/`): Update if architecture, key files, or quirks change. This ensures future AI sessions remain efficient.
+
+### Release Workflow
+To cleanup, commit, and tag a release in one step, use the provided script:
+
+```bash
+.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "<COMMIT_MESSAGE>" <TAG_VERSION>
+```
+**Example**:
+```bash
+.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release version 1.0" v1.0
+```
+This script acts as a "Cleanup & Release" skill by:
+1. Cleaning build artifacts (`./gradlew clean`).
+2. Staging all changes (`git add .`).
+3. Committing with the message.
+4. Tagging with the version.
+
+

@@ -5,9 +5,15 @@ This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, bu
 ## Prerequisites
 
 - **Android Studio** (Koala Feature Drop or newer recommended)
-- **JDK 17** (Usually embedded with Android Studio)
+- **JDK 17** (Strict requirement)
 - A **Xiaomi Pad 2 Pro** (or compatible Android tablet) for testing
 - USB Cable for debugging
+
+> [!NOTE]
+> For detailed instructions, please refer to the [Documentation](docs/README.md).
+> - [User Guide](docs/user/installation.md)
+> - [Developer Setup](docs/developer/setup.md)
+> - [Project Context](docs/assistant/project_context.md)
 
 ## Building the Project
 
