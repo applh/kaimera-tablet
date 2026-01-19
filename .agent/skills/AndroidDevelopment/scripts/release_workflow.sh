@@ -24,4 +24,11 @@ git commit -m "$MSG"
 echo "=== [4/4] Tagging $TAG ==="
 git tag -a "$TAG" -m "Release $TAG"
 
-echo "SUCCESS: Released $TAG"
+
+echo "=== [5/6] Pushing Changes ==="
+git push origin main
+
+echo "=== [6/6] Pushing Tag ==="
+git push origin "$TAG"
+
+echo "SUCCESS: Released $TAG and pushed to remote"

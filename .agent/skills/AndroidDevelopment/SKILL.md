@@ -111,5 +111,4 @@ This script acts as a "Cleanup & Release" skill by:
 2. Staging all changes (`git add .`).
 3. Committing with the message.
 4. Tagging with the version.
-
-
+5. Pushing changes and tag to remote (`git push origin`).
