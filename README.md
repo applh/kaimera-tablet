@@ -1,4 +1,4 @@
-# Kaimera Tablet Android App (v0.0.5)
+# Kaimera Tablet Android App (v0.0.7)
 
 This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, built using Jetpack Compose.
 
@@ -105,6 +105,29 @@ If you prefer to install the APK manually using `adb`:
     ```bash
     adb shell am start -n com.kaimera.tablet/.MainActivity
     ```
+
+## Antigravity Skills Environment
+
+This project is equipped with Antigravity skills to streamline development verification and release processes.
+
+### Available Workflows
+
+#### 1. Feature Scaffolding
+Generate boilerplate code for new features (Screen, ViewModel, Repository) automatically:
+```bash
+.agent/skills/AndroidDevelopment/scripts/scaffold_feature.sh "MyFeature"
+```
+
+#### 2. Release & Publish
+Automate the cleanup, git tagging, and GitHub publishing process:
+```bash
+.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release Message" v0.0.X
+```
+This script will:
+1. Clean build artifacts.
+2. Stage usage changes.
+3. Commit and Tag.
+4. Push code and tags to `origin`.
 
 ## Setup Synthesis
 

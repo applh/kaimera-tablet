@@ -9,7 +9,11 @@ data class MediaFile(
     val uri: Uri,
     val name: String,
     val dateAdded: Long,
-    val isVideo: Boolean
+    val isVideo: Boolean,
+    val size: Long = 0,
+    val width: Int = 0,
+    val height: Int = 0,
+    val duration: Long = 0
 )
 
 interface FilesRepository {
@@ -47,11 +51,19 @@ class FilesRepositoryImpl(private val context: Context) : FilesRepository {
         isVideo: Boolean,
         list: MutableList<MediaFile>
     ) {
-        val projection = arrayOf(
+        val projection = mutableListOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DISPLAY_NAME,
-            MediaStore.MediaColumns.DATE_ADDED
-        )
+            MediaStore.MediaColumns.DATE_ADDED,
+            MediaStore.MediaColumns.SIZE,
+            MediaStore.MediaColumns.WIDTH,
+            MediaStore.MediaColumns.HEIGHT
+        ).apply {
+            if (isVideo) {
+                add(MediaStore.Video.VideoColumns.DURATION)
+            }
+        }.toTypedArray()
+
         // Add error handling safely
         try {
             context.contentResolver.query(
@@ -64,14 +76,22 @@ class FilesRepositoryImpl(private val context: Context) : FilesRepository {
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                 val nameCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
+                val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
+                val widthCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.WIDTH)
+                val heightCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.HEIGHT)
+                val durationCol = if (isVideo) cursor.getColumnIndexOrThrow(MediaStore.Video.VideoColumns.DURATION) else -1
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
                     val name = cursor.getString(nameCol) ?: "Unknown"
                     val date = cursor.getLong(dateCol)
+                    val size = cursor.getLong(sizeCol)
+                    val width = cursor.getInt(widthCol)
+                    val height = cursor.getInt(heightCol)
+                    val duration = if (durationCol != -1) cursor.getLong(durationCol) else 0L
                     val uri = ContentUris.withAppendedId(collection, id)
                     
-                    list.add(MediaFile(uri, name, date, isVideo))
+                    list.add(MediaFile(uri, name, date, isVideo, size, width, height, duration))
                 }
             }
         } catch (e: Exception) {

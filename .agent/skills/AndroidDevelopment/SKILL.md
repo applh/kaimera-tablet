@@ -97,7 +97,7 @@ This will create:
 Make sure to register the new Screen in `MainActivity.kt` navigation.
 
 ### Release Workflow
-To cleanup, commit, and tag a release in one step, use the provided script:
+To cleanup, update documentation/skills, commit, and tag a release in one step, use the provided script:
 
 ```bash
 .agent/skills/AndroidDevelopment/scripts/release_workflow.sh "<COMMIT_MESSAGE>" <TAG_VERSION>
@@ -108,7 +108,8 @@ To cleanup, commit, and tag a release in one step, use the provided script:
 ```
 This script acts as a "Cleanup & Release" skill by:
 1. Cleaning build artifacts (`./gradlew clean`).
-2. Staging all changes (`git add .`).
-3. Committing with the message.
-4. Tagging with the version.
-5. Pushing changes and tag to remote (`git push origin`).
+2. **Pre-processing**: Reminds you to update all relevant `docs/` and `.agent/skills/` documentation.
+3. Staging all changes (`git add .`).
+4. Committing with the message.
+5. Tagging with the version.
+6. Pushing changes and tag to the GitHub repository.

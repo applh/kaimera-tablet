@@ -10,25 +10,31 @@ fi
 MSG="$1"
 TAG="$2"
 
-echo "=== [1/4] Cleaning Build Artifacts ==="
+echo "=== [1/7] Cleaning Build Artifacts ==="
 ./gradlew clean || echo "Gradle clean failed, forcing removal..."
 rm -f build.log
 rm -rf app/build .gradle/ .DS_Store
 
-echo "=== [2/4] Staging Changes ==="
+echo "=== [2/7] Update Docs & Skills ==="
+echo "REMINDER: Ensure you have updated all relevant documentation and skills."
+echo "Check: docs/**/*.md"
+echo "Check: .agent/skills/**/*.md"
+# Wait for user confirmation or just proceed as a task
+# read -p "Press enter to continue after checking docs/skills..."
+
+echo "=== [3/7] Staging Changes ==="
 git add .
 
-echo "=== [3/4] Committing ==="
+echo "=== [4/7] Committing ==="
 git commit -m "$MSG"
 
-echo "=== [4/4] Tagging $TAG ==="
+echo "=== [5/7] Tagging $TAG ==="
 git tag -a "$TAG" -m "Release $TAG"
 
-
-echo "=== [5/6] Pushing Changes ==="
+echo "=== [6/7] Pushing Changes to GitHub ==="
 git push origin main
 
-echo "=== [6/6] Pushing Tag ==="
+echo "=== [7/7] Pushing Tag to GitHub ==="
 git push origin "$TAG"
 
-echo "SUCCESS: Released $TAG and pushed to remote"
+echo "SUCCESS: Released $TAG and published to GitHub"
