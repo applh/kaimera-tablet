@@ -1,0 +1,37 @@
+package ${PACKAGE_NAME}
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+@Composable
+fun ${FEATURE_NAME}Screen(
+    viewModel: ${FEATURE_NAME}ViewModel = viewModel() // Note: You might need a Factory or Hilt here
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        when (val state = uiState) {
+            is ${FEATURE_NAME}UiState.Loading -> {
+                CircularProgressIndicator()
+            }
+            is ${FEATURE_NAME}UiState.Success -> {
+                Column {
+                    Text(text = "Data Loaded:")
+                    Text(text = state.data)
+                }
+            }
+            is ${FEATURE_NAME}UiState.Error -> {
+                Text(text = "Error: \${state.message}")
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+package ${PACKAGE_NAME}
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class ${FEATURE_NAME}ViewModel(
+    private val repository: ${FEATURE_NAME}Repository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<${FEATURE_NAME}UiState>(${FEATURE_NAME}UiState.Loading)
+    val uiState: StateFlow<${FEATURE_NAME}UiState> = _uiState.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    fun loadData() {
+        viewModelScope.launch {
+            _uiState.value = ${FEATURE_NAME}UiState.Loading
+            try {
+                val data = repository.getData()
+                _uiState.value = ${FEATURE_NAME}UiState.Success(data)
+            } catch (e: Exception) {
+                _uiState.value = ${FEATURE_NAME}UiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+}
+
+sealed class ${FEATURE_NAME}UiState {
+    object Loading : ${FEATURE_NAME}UiState()
+    data class Success(val data: String) : ${FEATURE_NAME}UiState()
+    data class Error(val message: String) : ${FEATURE_NAME}UiState()
+}

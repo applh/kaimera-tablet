@@ -65,6 +65,28 @@ adb shell am start -n com.kaimera.tablet/.MainActivity
 2.  **Developer Guide** (`docs/developer/`): Update if build requirements, dependencies, or scripts change.
 3.  **Project Context** (`docs/assistant/`): Update if architecture, key files, or quirks change. This ensures future AI sessions remain efficient.
 
+### Architecture & Design Patterns
+
+We follow the standard **Model-View-ViewModel (MVVM)** architecture with the **Repository Pattern**.
+
+1.  **Screen (View)**: Composable functions (in `ui/` packages) that observe the `ViewModel`.
+2.  **ViewModel**: Manages UI state (using `StateFlow`) and business logic.
+3.  **Repository**: Abstracts data sources (API, Database).
+
+#### Scaffolding New Features
+Use the scaffolding script to generate standard boilerplate for a new feature:
+
+```bash
+.agent/skills/AndroidDevelopment/scripts/scaffold_feature.sh "FeatureName"
+```
+
+This will create:
+- `FeatureNameScreen.kt`
+- `FeatureNameViewModel.kt`
+- `FeatureNameRepository.kt`
+
+Make sure to register the new Screen in `MainActivity.kt` navigation.
+
 ### Release Workflow
 To cleanup, commit, and tag a release in one step, use the provided script:
 

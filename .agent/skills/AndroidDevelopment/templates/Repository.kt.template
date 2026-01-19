@@ -1,0 +1,14 @@
+package ${PACKAGE_NAME}
+
+import kotlinx.coroutines.delay
+
+interface ${FEATURE_NAME}Repository {
+    suspend fun getData(): String
+}
+
+class ${FEATURE_NAME}RepositoryImpl : ${FEATURE_NAME}Repository {
+    override suspend fun getData(): String {
+        delay(1000) // Simulate network delay
+        return "Hello from ${FEATURE_NAME}Repository!"
+    }
+}
