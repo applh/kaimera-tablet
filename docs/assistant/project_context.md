@@ -10,13 +10,15 @@
 - **Navigation**: `androidx.navigation.compose`.
 - **UI Structure**:
     - `LauncherScreen`: Entry point, grid of icons.
-    - `CameraScreen`: Placeholder for camera function.
-    - `SettingsScreen`: Placeholder for settings.
+    - `CameraScreen`: CameraX-based capture interface with Pro features.
+    - `SettingsScreen`: App-wide and applet-specific settings.
+    - `CameraSettings`: Configuration for Camera applet.
   
 ## Key Files
 - `app/src/main/java/com/kaimera/tablet/MainActivity.kt`: Navigation entry.
 - `app/src/main/java/com/kaimera/tablet/ui/LauncherScreen.kt`: Main menu.
-- `app/build.gradle.kts`: Dependency management.
+- `app/src/main/java/com/kaimera/tablet/ui/CameraScreen.kt`: Camera implementation.
+- `app/build.gradle.kts`: Dependency management (includes CameraX).
 
 ## Environment Quirks
 - **JDK 17 STRICT**: System may have JDK 25 (incompatible). Always explicitly set `JAVA_HOME` to JDK 17 path.

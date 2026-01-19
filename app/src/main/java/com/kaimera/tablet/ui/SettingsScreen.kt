@@ -1,5 +1,6 @@
 package com.kaimera.tablet.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -21,7 +22,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onNavigate: (String) -> Unit = {}) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -52,9 +53,17 @@ fun SettingsScreen() {
 
             // Applets Section
             SettingsSection(title = "Applets") {
-                AppletSetting(name = "Camera", description = "Camera settings placeholder")
+                AppletSetting(
+                    name = "Camera",
+                    description = "Configure resolution, grid, and timer",
+                    onClick = { onNavigate("camera_settings") }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                AppletSetting(name = "Files", description = "File manager settings placeholder")
+                AppletSetting(
+                    name = "Files",
+                    description = "File manager settings placeholder",
+                    onClick = { /* TODO */ }
+                )
             }
         }
     }
@@ -76,8 +85,8 @@ fun SettingsSection(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-fun AppletSetting(name: String, description: String) {
-    Column {
+fun AppletSetting(name: String, description: String, onClick: () -> Unit) {
+    Column(modifier = Modifier.clickable(onClick = onClick).fillMaxWidth().padding(vertical=8.dp)) {
         Text(text = name, style = MaterialTheme.typography.titleMedium)
         Text(text = description, style = MaterialTheme.typography.bodyMedium)
     }

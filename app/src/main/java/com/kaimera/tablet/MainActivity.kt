@@ -42,13 +42,24 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("camera") {
-                            CameraScreen()
+                            CameraScreen(
+                                onNavigateToGallery = {
+                                    navController.navigate("files")
+                                }
+                            )
                         }
                         composable("settings") {
-                            SettingsScreen()
+                            SettingsScreen(
+                                onNavigate = { route ->
+                                    navController.navigate(route)
+                                }
+                            )
                         }
                         composable("files") {
                             FilesScreen()
+                        }
+                        composable("camera_settings") {
+                            com.kaimera.tablet.ui.CameraSettings()
                         }
                     }
                 }

@@ -2,6 +2,12 @@
 
 This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, built using Jetpack Compose.
 
+## Key Features
+- **Launcher**: Custom grid-based app launcher.
+- **Camera Applet**: Professional camera interface with Zoom, Pro controls, and Settings.
+- **Settings**: Unified settings hub for system and applets.
+- **Files**: Basic file management (Work In Progress).
+
 ## Prerequisites
 
 - **Android Studio** (Koala Feature Drop or newer recommended)
@@ -27,6 +33,9 @@ This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, bu
     - Ensure the build completes successfully in the "Build" tab at the bottom.
 
 ## Deploying to Android Device
+
+
+## Deployment
 
 To run the app on your physical Xiaomi tablet:
 
