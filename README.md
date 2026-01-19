@@ -46,3 +46,24 @@ To run the app on your physical Xiaomi tablet:
 - **Device not found**: Ensure ADB is running. Try unplugging and replugging the cable, or switching USB modes (Transfer files / PTP).
 - **Gradle Sync Failed**: Check your internet connection or proxy settings.
 - **License not accepted**: Run `./gradlew androidDependencies` to see if you need to accept SDK licenses.
+
+## CLI Build & Deploy
+
+You can also build and deploy completely from the command line using the Gradle Wrapper.
+
+### Build APK
+To build the debug APK:
+```bash
+./gradlew assembleDebug
+```
+The APK will be located at: `app/build/outputs/apk/debug/app-debug.apk`
+
+### Install and Run
+To build and immediately install onto a connected device:
+```bash
+./gradlew installDebug
+```
+Then start the app with adb:
+```bash
+adb shell am start -n com.kaimera.tablet/.MainActivity
+```
