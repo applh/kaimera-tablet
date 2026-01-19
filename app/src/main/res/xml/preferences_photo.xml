@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SeekBarPreference
+        app:key="photo_quality_int"
+        app:title="Photo Quality"
+        app:summary="Compression quality (1-100)"
+        android:max="100"
+        android:min="1"
+        app:defaultValue="95"
+        app:showSeekBarValue="true"
+        app:updatesContinuously="true" />
+
+    <ListPreference
+        app:key="image_format"
+        app:title="Image Format"
+        app:summary="%s"
+        app:entries="@array/image_format_entries"
+        app:entryValues="@array/image_format_values"
+        app:defaultValue="jpeg" />
+
+    <ListPreference
+        app:key="capture_mode_preference"
+        app:title="Capture Mode"
+        app:summary="%s"
+        app:entries="@array/capture_mode_entries"
+        app:entryValues="@array/capture_mode_values"
+        app:defaultValue="latency" />
+
+    <ListPreference
+        app:key="target_resolution"
+        app:title="Target Resolution"
+        app:summary="%s"
+        app:entries="@array/target_resolution_entries"
+        app:entryValues="@array/target_resolution_values"
+        app:defaultValue="max" />
+
+    <ListPreference
+        app:key="flash_mode"
+        app:title="Flash Mode"
+        app:summary="%s"
+        app:entries="@array/flash_mode_entries"
+        app:entryValues="@array/flash_mode_values"
+        app:defaultValue="auto" />
+
+    <SwitchPreferenceCompat
+        app:key="hdr_enabled"
+        app:title="HDR (High Dynamic Range)"
+        app:summary="Capture multiple exposures for better detail in highlights and shadows. May not be available on all devices."
+        app:defaultValue="false" />
+
+</PreferenceScreen>

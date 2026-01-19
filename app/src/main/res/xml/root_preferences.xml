@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/pref_category_general">
+        <SwitchPreferenceCompat
+            app:key="launch_screen_enabled"
+            app:title="Show Launch Screen"
+            app:summary="Show app icon on startup before entering camera"
+            app:defaultValue="true" />
+
+        <Preference
+            app:key="return_to_launcher"
+            app:title="Return to Launch Screen"
+            app:summary="Go back to the main app selection screen"
+            app:icon="@android:drawable/ic_menu_revert" />
+            
+        <SwitchPreferenceCompat
+            app:key="shutter_sound"
+            app:title="Shutter Sound"
+            app:summary="Play a sound when taking a photo"
+            app:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_category_camera">
+        <SwitchPreferenceCompat
+            app:key="camera_save_gps_location"
+            app:title="Save Location"
+            app:summary="Save GPS location to photos"
+            app:defaultValue="false" />
+
+        <Preference
+            app:key="photo_settings"
+            app:title="@string/pref_photo_settings"
+            app:summary="Quality, resolution, flash, and capture mode"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:fragment="com.example.kaimera.fragments.PhotoSettingsFragment" />
+
+        <Preference
+            app:key="video_settings"
+            app:title="@string/pref_video_settings"
+            app:summary="Quality and frame rate"
+            app:icon="@android:drawable/ic_menu_gallery"
+            app:fragment="com.example.kaimera.fragments.VideoSettingsFragment" />
+
+        <Preference
+            app:key="overlays_settings"
+            app:title="@string/pref_overlay_settings"
+            app:summary="Grid, chronometer, and level indicator settings"
+            app:icon="@android:drawable/ic_menu_view"
+            app:fragment="com.example.kaimera.fragments.OverlaysSettingsFragment" />
+
+        <SeekBarPreference
+            app:key="preview_auto_save_delay"
+            app:title="Preview Auto-Save Delay"
+            app:summary="Automatically save photo after preview (0 = instant save)"
+            android:max="5"
+            app:defaultValue="2"
+            app:showSeekBarValue="true"
+            app:updatesContinuously="false" />
+
+        <SeekBarPreference
+            app:key="gallery_max_zoom"
+            app:title="Gallery Max Zoom"
+            app:summary="Maximum zoom level for photos and videos"
+            android:max="100"
+            android:min="1"
+            app:defaultValue="10"
+            app:showSeekBarValue="true"
+            app:updatesContinuously="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_category_storage">
+        <Preference
+            app:key="storage_settings"
+            app:title="@string/pref_storage_settings"
+            app:summary="File naming, location, and auto-delete options"
+            app:icon="@android:drawable/ic_menu_save"
+            app:fragment="com.example.kaimera.fragments.StorageSettingsFragment" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_category_about">
+        <Preference
+            app:key="version"
+            app:title="Version"
+            app:summary="23.3.1" />
+        
+        <Preference
+            app:key="debug_logs"
+            app:title="🐛 Debug Logs"
+            app:summary="View app logs for troubleshooting"
+            app:icon="@android:drawable/ic_menu_info_details" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

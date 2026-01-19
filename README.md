@@ -67,3 +67,43 @@ Then start the app with adb:
 ```bash
 adb shell am start -n com.kaimera.tablet/.MainActivity
 ```
+
+## ADB Manual Install & Launch
+
+If you prefer to install the APK manually using `adb`:
+
+1.  **Check Device Connection**:
+    ```bash
+    adb devices
+    ```
+    Ensure your device is listed.
+
+2.  **Install APK**:
+    ```bash
+    adb install -r app/build/outputs/apk/debug/app-debug.apk
+    ```
+    The `-r` flag reinstalls the app if it's already present.
+
+3.  **Launch App**:
+    ```bash
+    adb shell am start -n com.kaimera.tablet/.MainActivity
+    ```
+
+## Setup Synthesis
+
+To set up the development environment correctly:
+
+1.  **Java Requirement**: The project **strictly requires JDK 17**.
+    - **Check version**: `java -version` (Must output 17.x)
+    - **Install (Mac)**: `brew install openjdk@17`
+    - **Fix "25.0.1" error**: If you see build failures related to Java 25, ensure `JAVA_HOME` points to JDK 17.
+
+2.  **SDK Configuration**:
+    - Ensure `local.properties` is created in the root directory.
+    - Content: `sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk`
+
+3.  **Troubleshooting**:
+    - If `gradlew` is missing, download it from the [GitHub repo](https://github.com/applh/kaimera).
+    - If resources are missing (`res/` errors), ensure you have cloned the full repository.
+    
+https://github.com/applh/kaimera

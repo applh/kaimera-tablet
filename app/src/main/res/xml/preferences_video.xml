@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ListPreference
+        app:key="video_quality"
+        app:title="Video Quality"
+        app:summary="%s"
+        app:entries="@array/video_quality_entries"
+        app:entryValues="@array/video_quality_values"
+        app:defaultValue="fhd" />
+
+    <SwitchPreferenceCompat
+        app:key="enable_120fps"
+        app:title="High-Speed Recording (120fps)"
+        app:summary="Enable 120fps video recording for slow-motion effects. Requires device support. May limit resolution to 1080p."
+        app:defaultValue="false" />
+
+    <ListPreference
+        app:key="video_frame_rate"
+        app:title="Video Frame Rate"
+        app:summary="%s"
+        app:entries="@array/video_frame_rate_entries"
+        app:entryValues="@array/video_frame_rate_values"
+        app:defaultValue="30" />
+
+</PreferenceScreen>

@@ -1,0 +1,221 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Settings"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
+
+            <ImageButton
+                android:id="@+id/btn_home"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_home"
+                android:scaleType="fitCenter"
+                android:padding="4dp"
+                android:contentDescription="Back to Launcher"/>
+
+            <ImageButton
+                android:id="@+id/btn_close"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:scaleType="fitCenter"
+                android:padding="4dp"
+                android:contentDescription="Close Settings"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HUD Text"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/et_hud_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter HUD text"
+            android:inputType="text"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btn_apply"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apply HUD Text"
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Color &amp; Light"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <RadioGroup
+            android:id="@+id/rg_color_target"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rb_target_hud"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HUD Text"
+                android:checked="true"
+                android:layout_marginEnd="16dp"/>
+
+            <RadioButton
+                android:id="@+id/rb_target_light"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Camera Light"/>
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tv_intensity_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Light Intensity: 10.0" />
+        <SeekBar
+            android:id="@+id/sb_intensity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="50"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tv_hue_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hue: 0" />
+            <SeekBar
+                android:id="@+id/sb_hue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="360" />
+
+            <TextView
+                android:id="@+id/tv_sat_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Saturation: 0%" />
+            <SeekBar
+                android:id="@+id/sb_saturation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tv_val_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Value: 100%" />
+            <SeekBar
+                android:id="@+id/sb_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Presets"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginBottom="24dp">
+            
+            <LinearLayout
+                android:id="@+id/color_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+                
+        </HorizontalScrollView>
+
+     <!-- Grid Settings -->
+     <TextView
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:text="Grid Density"
+         android:textStyle="bold"
+         android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tv_lat_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Latitude Density: 24" />
+
+    <SeekBar
+        android:id="@+id/seekBarLat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="24"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tv_long_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Longitude Density: 24" />
+
+    <SeekBar
+        android:id="@+id/seekBarLong"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="24"
+        android:layout_marginBottom="24dp"/>
+                
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_debug_arrows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Debug Arrows"
+            android:layout_marginBottom="16dp" 
+            app:showText="false"
+            android:textOn=""
+            android:textOff=""/>
+
+    </LinearLayout>
+</ScrollView>

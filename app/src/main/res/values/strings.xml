@@ -1,3 +1,138 @@
 <resources>
-    <string name="app_name">Kaimera Tablet</string>
+    <string name="app_name">Kaimera</string>
+    <string name="capture_photo">Capture Photo</string>
+    <string name="gallery">Gallery</string>
+    <string name="gallery_image">Captured photo</string>
+    <string name="no_photos">No photos yet</string>
+    <string name="switch_camera">Switch Camera</string>
+    <string name="flash_off">Flash Off</string>
+    <string name="flash_on">Flash On</string>
+    <string name="flash_auto">Flash Auto</string>
+    <string name="retake">Retake</string>
+    <string name="keep">Keep</string>
+    <string name="grid_toggle">Toggle Grid</string>
+    <string name="timer_off">Timer Off</string>
+    <string name="timer_3s">Timer 3s</string>
+    <string name="timer_10s">Timer 10s</string>
+    <string name="quality_high">Quality High</string>
+    <string name="quality_medium">Quality Medium</string>
+    <string name="quality_low">Quality Low</string>
+    <string name="mode_photo">Photo Mode</string>
+    <string name="mode_video">Video Mode</string>
+    <string name="recording">Recording</string>
+    <string name="burst_counter">Burst: %1$d</string>
+    <string name="filter_none">None</string>
+    <string name="filter_grayscale">B&amp;W</string>
+    <string name="filter_sepia">Sepia</string>
+    <string name="filter_vivid">Vivid</string>
+    <string name="filter_cool">Cool</string>
+    <string name="home">Home</string>
+
+    <!-- Settings Titles -->
+    <string name="pref_category_general">General</string>
+    <string name="pref_category_camera">Camera</string>
+    <string name="pref_category_storage">Storage</string>
+    <string name="pref_category_about">About</string>
+    <string name="pref_photo_settings">Photo Settings</string>
+    <string name="pref_video_settings">Video Settings</string>
+    <string name="pref_overlay_settings">Overlay Settings</string>
+    <string name="pref_storage_settings">Storage Settings</string>
+
+    <string-array name="flash_mode_entries">
+        <item>Auto</item>
+        <item>On</item>
+        <item>Off</item>
+    </string-array>
+    <string-array name="flash_mode_values">
+        <item>auto</item>
+        <item>on</item>
+        <item>off</item>
+    </string-array>
+
+    <string-array name="save_location_entries">
+        <item>App Storage</item>
+        <item>SD Card (if available)</item>
+        <item>DCIM (Public Gallery)</item>
+    </string-array>
+    <string-array name="save_location_values">
+        <item>app_storage</item>
+        <item>sd_card</item>
+        <item>dcim</item>
+    </string-array>
+
+    <string-array name="file_naming_entries">
+        <item>Timestamp (IMG_2023...)</item>
+        <item>Sequential (IMG_0001...)</item>
+        <item>Custom Prefix</item>
+    </string-array>
+    <string-array name="file_naming_values">
+        <item>timestamp</item>
+        <item>sequential</item>
+        <item>custom_prefix</item>
+    </string-array>
+
+    <string-array name="keep_files_entries">
+        <item>7 Days</item>
+        <item>30 Days</item>
+        <item>90 Days</item>
+        <item>Never (Manual delete only)</item>
+    </string-array>
+    <string-array name="keep_files_values">
+        <item>7</item>
+        <item>30</item>
+        <item>90</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="video_quality_entries">
+        <item>4K (UHD)</item>
+        <item>1080p (FHD)</item>
+        <item>720p (HD)</item>
+    </string-array>
+    <string-array name="video_quality_values">
+        <item>uhd</item>
+        <item>fhd</item>
+        <item>hd</item>
+    </string-array>
+
+    <string-array name="video_frame_rate_entries">
+        <item>24 fps</item>
+        <item>30 fps</item>
+        <item>60 fps</item>
+    </string-array>
+    <string-array name="video_frame_rate_values">
+        <item>24</item>
+        <item>30</item>
+        <item>60</item>
+    </string-array>
+
+    <string-array name="capture_mode_entries">
+        <item>Minimize Latency (Faster)</item>
+        <item>Maximize Quality (Slower)</item>
+    </string-array>
+    <string-array name="capture_mode_values">
+        <item>latency</item>
+        <item>quality</item>
+    </string-array>
+
+    <string-array name="target_resolution_entries">
+        <item>Default (Max)</item>
+        <item>12MP (4:3)</item>
+        <item>FHD (16:9)</item>
+        <item>HD (16:9)</item>
+    </string-array>
+    <string-array name="target_resolution_values">
+        <item>max</item>
+        <item>12mp</item>
+        <item>fhd</item>
+        <item>hd</item>
+    </string-array>
+
+    <string-array name="image_format_entries">
+        <item>JPEG (Standard, compatible)</item>
+        <item>WebP (Smaller files, modern)</item>
+    </string-array>
+    <string-array name="image_format_values">
+        <item>jpeg</item>
+        <item>webp</item>
+    </string-array>
 </resources>
