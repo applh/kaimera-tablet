@@ -95,7 +95,7 @@ To cleanup, commit, and tag a release in one step, use the provided script:
 ```
 **Example**:
 ```bash
-.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release version 1.0" v1.0
+.agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release version 0.0.1" v0.0.1
 ```
 This script acts as a "Cleanup & Release" skill by:
 1. Cleaning build artifacts (`./gradlew clean`).
