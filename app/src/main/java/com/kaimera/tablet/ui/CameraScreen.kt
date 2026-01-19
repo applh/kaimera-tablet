@@ -108,6 +108,11 @@ import android.view.OrientationEventListener
 import android.view.Surface
 
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.hardware.camera2.CameraMetadata
+import androidx.compose.material.icons.filled.Tune
+import kotlin.math.roundToInt
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
@@ -115,6 +120,7 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val userPreferences = remember { UserPreferencesRepository(context) }
+    val viewModel: CameraViewModel = viewModel()
 
     val gridRows by userPreferences.gridRows.collectAsState(initial = 0)
     val gridCols by userPreferences.gridCols.collectAsState(initial = 0)
@@ -143,7 +149,8 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             flashModePref = flashModePref,
             onFlashModeChange = { newMode -> 
                 scope.launch { userPreferences.setFlashMode(newMode) }
-            }
+            },
+            viewModel = viewModel
         )
     } else {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -166,7 +173,8 @@ fun CameraContent(
     gridCols: Int,
     timerSeconds: Int,
     flashModePref: Int,
-    onFlashModeChange: (Int) -> Unit
+    onFlashModeChange: (Int) -> Unit,
+    viewModel: CameraViewModel
 ) {
     // CameraProvider State
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
@@ -389,6 +397,9 @@ fun CameraContent(
             val camera = provider.bindToLifecycle(lifecycleOwner, cameraSelector, useCaseGroup)
             Log.d("CameraScreen", "Bind complete.")
             
+            // Bind to ViewModel
+            viewModel.bindCamera(camera)
+
             currentCameraControl = camera.cameraControl
             
             camera.cameraInfo.zoomState.observe(lifecycleOwner) { state ->
@@ -499,6 +510,21 @@ fun CameraContent(
                 .padding(vertical = 16.dp), // Extra margin for aesthetics
             horizontalArrangement = Arrangement.End
         ) {
+            
+            // Pro Controls Panel (Left Side)
+            var showProPanel by remember { mutableStateOf(false) }
+            
+            if (showProPanel) {
+                ProControlPanel(
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 16.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .padding(16.dp)
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Sidebar Surface
@@ -592,6 +618,16 @@ fun CameraContent(
                                 Icons.Filled.AutoAwesome, 
                                 contentDescription = "Filters", 
                                 tint = if(showFilterMenu || selectedFilter != TextureRenderer.FilterType.NORMAL) Color.Yellow else Color.White,
+                                modifier = Modifier.rotate(rotationAnimation)
+                            )
+                        }
+
+                        // Pro Mode Toggle
+                        IconButton(onClick = { showProPanel = !showProPanel }) {
+                            Icon(
+                                Icons.Filled.Tune,
+                                contentDescription = "Pro Mode",
+                                tint = if (showProPanel) Color.Yellow else Color.White,
                                 modifier = Modifier.rotate(rotationAnimation)
                             )
                         }
@@ -727,6 +763,77 @@ fun FilterChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(name, color = Color.White, fontSize = 12.sp)
+    }
+}
+
+@Composable
+fun ProControlPanel(
+    viewModel: CameraViewModel,
+    modifier: Modifier = Modifier
+) {
+    val exposureIndex by viewModel.exposureIndex.collectAsState()
+    val exposureRange by viewModel.exposureRange.collectAsState()
+    val wbMode by viewModel.whiteBalanceMode.collectAsState()
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("PRO", color = Color.Yellow, style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Exposure Slider
+        Text("EV ${exposureIndex}", color = Color.White, style = MaterialTheme.typography.labelSmall)
+        Box(
+            modifier = Modifier
+                .height(150.dp)
+                .width(40.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Slider(
+                value = exposureIndex.toFloat(),
+                onValueChange = { viewModel.setExposureCompensation(it.roundToInt()) },
+                valueRange = exposureRange.first.toFloat()..exposureRange.last.toFloat(),
+                modifier = Modifier
+                    .rotate(-90f)
+                    .requiredWidth(150.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // White Balance
+        Text("WB", color = Color.White, style = MaterialTheme.typography.labelSmall)
+        
+        val wbModes = listOf(
+            CameraMetadata.CONTROL_AWB_MODE_AUTO,
+            CameraMetadata.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT,
+            CameraMetadata.CONTROL_AWB_MODE_DAYLIGHT,
+            CameraMetadata.CONTROL_AWB_MODE_INCANDESCENT,
+            CameraMetadata.CONTROL_AWB_MODE_FLUORESCENT
+        )
+        
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            wbModes.forEach { mode ->
+                val label = viewModel.getWhiteBalanceLabel(mode)
+                val isSelected = wbMode == mode
+                
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isSelected) Color.Yellow else Color.Transparent)
+                        .clickable { viewModel.setWhiteBalance(mode) }
+                        .padding(4.dp)
+                ) {
+                    Text(
+                        text = label.first().toString(), // Abbreviate to A, C, S, I, F
+                        color = if (isSelected) Color.Black else Color.White,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        }
     }
 }
 

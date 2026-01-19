@@ -45,7 +45,7 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 ## Phase 3: Pro & "Options Rich" Features
 *Goal: Appeal to power users.*
 
-### 3.1 Pro Control Panel
+### 3.1 Pro Control Panel (Completed v0.0.9)
 - **Exposure Compensation**: Slider to adjust +/- EV.
 - **White Balance**: Presets (Cloudy, Sunny, Incandescent, Fluorescent, Auto).
 - **ISO/Shutter Priority**: (If supported by hardware/Camera2Interop) Monitor and display current values.
