@@ -101,6 +101,12 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.core.util.Consumer
 import androidx.camera.video.VideoRecordEvent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.platform.LocalConfiguration
+import android.view.OrientationEventListener
+import android.view.Surface
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -174,6 +180,60 @@ fun CameraContent(
     var maxZoomRatio by remember { mutableFloatStateOf(1f) }
     var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video
     var isRecording by remember { mutableStateOf(false) }
+
+    // Orientation State for UI Rotation
+    var rotationDegrees by remember { mutableStateOf(0) }
+    val rotationAnimation by animateFloatAsState(
+        targetValue = -rotationDegrees.toFloat(),
+        animationSpec = tween(durationMillis = 300), 
+        label = "rotation"
+    )
+
+
+    
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val orientationEventListener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return
+                // Check if device is flat? No, standard logic.
+                
+                // Determine the rotation of the screen relative to the device's natural orientation.
+                // Since we locked to Landscape, the Activity considers "0" to be Landscape.
+                // But we want the icons to rotate relative to Gravity.
+                
+                // If I hold tablet in Landscape (Home button right), orientation is 0 (or 90? Tablet natural is usually varied).
+                // Let's assume standard behavior:
+                // 0 = Normal
+                // 90 = Right Side Down
+                // 180 = Upside Down
+                // 270 = Left Side Down
+                
+                val newRotation = when (orientation) {
+                    in 315..360, in 0..45 -> 90
+                    in 46..135 -> 180 
+                    in 136..225 -> 270
+                    in 226..315 -> 0
+                    else -> 90
+                }
+                
+                // For UI rotation, we want to counter-rotate.
+                // If device rotates 90deg clockwise, we want UI to rotate 90deg counter-clockwise relative to screen (which is now physical 90).
+                // Wait. We LOCKED the screen to Landscape.
+                // So the Screen (Activity) is ALWAYS at Surface.ROTATION_0 or ROTATION_90 depending on device natural.
+                // If it's "userLandscape", it will flip between 0 and 180 (if supported) or stay fixed.
+                // Let's assume the Activity does NOT rotate.
+                // So we just match gravity.
+                
+                if (newRotation != rotationDegrees) {
+                    rotationDegrees = newRotation
+                }
+            }
+        }
+        orientationEventListener.enable()
+        onDispose {
+            orientationEventListener.disable()
+        }
+    }
 
     // Timer State
     var isTimerRunning by remember { mutableStateOf(false) }
@@ -456,7 +516,12 @@ fun CameraContent(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Filled.ZoomIn, "Zoom In", tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Filled.ZoomIn, 
+                        "Zoom In", 
+                        tint = Color.White, 
+                        modifier = Modifier.size(20.dp).rotate(rotationAnimation)
+                    )
                     
                     // Vertical Slider using Layout to rotate constraints properly
                     // Simple rotation approach
@@ -479,7 +544,12 @@ fun CameraContent(
                         )
                     }
 
-                    Icon(Icons.Filled.ZoomOut, "Zoom Out", tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Filled.ZoomOut, 
+                        "Zoom Out", 
+                        tint = Color.White, 
+                        modifier = Modifier.size(20.dp).rotate(rotationAnimation)
+                    )
                 }
 
                 // 2. Main Controls Column
@@ -501,40 +571,40 @@ fun CameraContent(
                                     else -> Icons.Filled.FlashOff
                                 },
                                 contentDescription = "Flash",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.rotate(rotationAnimation)
                             )
                         }
                         
                          IconButton(onClick = {
                             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
                         }) {
-                            Icon(Icons.Filled.Cameraswitch, contentDescription = "Switch Camera", tint = Color.White)
+                            Icon(
+                                Icons.Filled.Cameraswitch, 
+                                contentDescription = "Switch Camera", 
+                                tint = Color.White, 
+                                modifier = Modifier.rotate(rotationAnimation) 
+                            )
                         }
 
                         IconButton(onClick = { showFilterMenu = !showFilterMenu }) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Filters", tint = if(showFilterMenu || selectedFilter != TextureRenderer.FilterType.NORMAL) Color.Yellow else Color.White)
+                            Icon(
+                                Icons.Filled.AutoAwesome, 
+                                contentDescription = "Filters", 
+                                tint = if(showFilterMenu || selectedFilter != TextureRenderer.FilterType.NORMAL) Color.Yellow else Color.White,
+                                modifier = Modifier.rotate(rotationAnimation)
+                            )
                         }
                     }
 
                     // CENTER: Shutter & Mode
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(64.dp)) {
                         // Compact Mode Switch
-                        Row(
-                            modifier = Modifier
-                                .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CompactModeButton(
-                                icon = Icons.Filled.PhotoCamera,
-                                isSelected = cameraMode == 0,
-                                onClick = { cameraMode = 0 }
-                            )
-                            CompactModeButton(
-                                icon = Icons.Filled.Videocam,
-                                isSelected = cameraMode == 1,
-                                onClick = { cameraMode = 1 }
-                            )
-                        }
+                        ModeSelector(
+                            currentMode = cameraMode,
+                            onModeSelected = { cameraMode = it },
+                            rotation = rotationAnimation
+                        )
 
                         // Shutter Button
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -568,7 +638,7 @@ fun CameraContent(
                                     imageVector = if (cameraMode == 1 && isRecording) Icons.Filled.Stop else Icons.Filled.PhotoCamera,
                                     contentDescription = "Capture",
                                     tint = if (cameraMode == 1) Color.Red else Color.White,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize().rotate(rotationAnimation)
                                 )
                             }
                             
@@ -597,7 +667,7 @@ fun CameraContent(
                                 model = lastImageUri,
                                 contentDescription = "Gallery",
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                                modifier = Modifier.fillMaxSize().clip(CircleShape).rotate(rotationAnimation)
                             )
                         }
                     }
@@ -661,23 +731,58 @@ fun FilterChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun CompactModeButton(
+fun ModeSelector(
+    currentMode: Int,
+    onModeSelected: (Int) -> Unit,
+    rotation: Float
+) {
+    Box(
+        modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(30.dp))
+            .padding(4.dp)
+            .rotate(rotation)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Photo Option
+            ModeIcon(
+                icon = Icons.Filled.PhotoCamera,
+                isSelected = currentMode == 0,
+                onClick = { onModeSelected(0) }
+            )
+            
+            // Video Option
+            ModeIcon(
+                icon = Icons.Filled.Videocam,
+                isSelected = currentMode == 1,
+                onClick = { onModeSelected(1) }
+            )
+        }
+    }
+}
+
+@Composable
+fun ModeIcon(
     icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val backgroundColor = if (isSelected) Color.White else Color.Transparent
+    val contentColor = if (isSelected) Color.Black else Color.White
+    
     Box(
         modifier = Modifier
-            .clip(CircleShape)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+            .clip(RoundedCornerShape(20.dp))
+            .background(backgroundColor)
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(20.dp)
+            tint = contentColor,
+            modifier = Modifier.size(24.dp)
         )
     }
 }
