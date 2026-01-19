@@ -7,9 +7,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +48,17 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
             ) {
                 LauncherIcon(
                     name = "Camera",
-                    icon = Icons.Default.Settings, // Placeholder icon, usually needs a camera icon
+                    icon = Icons.Default.Info, // Placeholder as PhotoCamera might need extended import
                     onClick = { onAppletSelected("camera") }
                 )
+                LauncherIcon(
+                    name = "Files",
+                    icon = Icons.Default.List, // Placeholder for Files
+                    onClick = { onAppletSelected("files") }
+                )
+
+                Spacer(modifier = Modifier.width(48.dp))
+
                 LauncherIcon(
                     name = "Settings",
                     icon = Icons.Default.Settings,

@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import com.kaimera.tablet.ui.CameraScreen
 import com.kaimera.tablet.ui.LauncherScreen
 import com.kaimera.tablet.ui.SettingsScreen
+import com.kaimera.tablet.files.FilesScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +46,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings") {
                             SettingsScreen()
+                        }
+                        composable("files") {
+                            FilesScreen()
                         }
                     }
                 }

@@ -13,6 +13,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun SettingsScreen() {
@@ -20,22 +26,59 @@ fun SettingsScreen() {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Settings Applet",
-                    style = MaterialTheme.typography.displayLarge
-                )
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.displayMedium,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            // Common Section
+            SettingsSection(title = "Common") {
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val date = Date(BuildConfig.BUILD_TIMESTAMP)
                 Text(
-                    text = "Built: ${dateFormat.format(date)}",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = "Build Timestamp: ${dateFormat.format(date)}",
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Applets Section
+            SettingsSection(title = "Applets") {
+                AppletSetting(name = "Camera", description = "Camera settings placeholder")
+                Spacer(modifier = Modifier.height(8.dp))
+                AppletSetting(name = "Files", description = "File manager settings placeholder")
+            }
         }
+    }
+}
+
+@Composable
+fun SettingsSection(title: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(8.dp))
+        content()
+    }
+}
+
+@Composable
+fun AppletSetting(name: String, description: String) {
+    Column {
+        Text(text = name, style = MaterialTheme.typography.titleMedium)
+        Text(text = description, style = MaterialTheme.typography.bodyMedium)
     }
 }

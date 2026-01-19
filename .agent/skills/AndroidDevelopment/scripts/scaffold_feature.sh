@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
-APP_MAIN_SRC="$SCRIPT_DIR/../../../app/src/main/java"
+APP_MAIN_SRC="$SCRIPT_DIR/../../../../app/src/main/java"
 PACKAGE_ROOT="com/kaimera/tablet"
 
 if [ -z "$1" ]; then
