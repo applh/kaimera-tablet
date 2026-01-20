@@ -1,4 +1,4 @@
-# Kaimera Tablet Android App (v0.2.1)
+# Kaimera Tablet Android App (v0.0.11)
 
 This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, built using Jetpack Compose.
 
@@ -142,7 +142,11 @@ To set up the development environment correctly:
 
 2.  **SDK Configuration**:
     - Ensure `local.properties` is created in the root directory.
-    - Content: `sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk`
+    - Content (example for macOS):
+      ```bash
+      sdk.dir=/Users/lh/Library/Android/sdk
+      ```
+    - Replace `lh` with your system username. You can find your SDK path in Android Studio under **Settings > Languages & Frameworks > Android SDK**.
 
 3.  **Troubleshooting**:
     - If `gradlew` is missing, download it from the [GitHub repo](https://github.com/applh/kaimera).

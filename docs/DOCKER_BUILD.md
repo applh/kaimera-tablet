@@ -1,6 +1,11 @@
-# Docker Build Environment
-
 This guide explains how to use the provided `Dockerfile` to create a consistent build environment for the Kaimera Tablet project. This ensures that builds are reproducible and do not depend on the host machine's specific configuration.
+
+> [!WARNING]
+> **Performance Impact**: Building inside a Docker container is significantly slower than building locally, especially on Apple Silicon (ARM64) Macs due to `amd64` emulation.
+> - **Local Build**: ~8 seconds
+> - **Docker Build**: ~6 minutes
+>
+> Use the Docker environment for CI/CD or fixing environment-specific issues, but for active development, a **local build** is highly recommended. See [README.md](../README.md#local-build--deploy) for local setup.
 
 ## Prerequisites
 

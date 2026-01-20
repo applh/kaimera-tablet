@@ -8,8 +8,9 @@
     ```
 - **Android SDK**: Ensure `local.properties` points to your SDK.
     ```properties
-    sdk.dir=/Users/<USER>/Library/Android/sdk
+    sdk.dir=/Users/lh/Library/Android/sdk
     ```
+    *(Replace `lh` with your system username if different)*
 - **Android Studio**: Recommended for Layout Inspector and device management.
 
 ## Building
