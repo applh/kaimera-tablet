@@ -38,7 +38,7 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Kaimera Launcher",
+                text = "Welcome to Kaimera",
                 style = MaterialTheme.typography.displayMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
             )

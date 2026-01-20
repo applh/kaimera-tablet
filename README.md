@@ -1,4 +1,4 @@
-# Kaimera Tablet Android App (v0.2.0)
+# Kaimera Tablet Android App (v0.2.1)
 
 This is a Kotlin-based Android application designed for the Xiaomi Pad 2 Pro, built using Jetpack Compose.
 
