@@ -23,10 +23,15 @@ The implementation follows a modular MVVM-like pattern:
 - **Output**: JPEG files saved to `Pictures/Kaimera`.
 - **Features**: Configurable JPEG quality and resolution tiers.
 
+
 ### 3. Video Recording
 - **UseCase**: `VideoCapture` with `Recorder`.
 - **Output**: MP4 files saved to `Movies/Kaimera`.
-- **Features**: Audio recording support, real-time duration counter, and thumbnail generation.
+- **Features**: 
+    - Audio recording support.
+    - Real-time duration counter.
+    - **Configurable Frame Rate**: Supports 30 FPS and 60 FPS (if supported by hardware) via `Camera2Interop` AE Target FPS Range.
+    - Pause/Resume support.
 
 ### 4. Hardware Controls
 - **Zoom**: Vertical slider mapping to `CameraControl.setZoomRatio`. Supports pinch-to-zoom via `PreviewView` (if enabled) or manual slider input.

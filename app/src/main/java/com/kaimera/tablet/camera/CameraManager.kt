@@ -7,6 +7,8 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.*
+import androidx.camera.camera2.interop.Camera2Interop
+import android.hardware.camera2.CaptureRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.camera.view.PreviewView
@@ -124,9 +126,14 @@ class CameraManager(private val context: Context) {
              .setResolutionStrategy(ResolutionStrategy(targetResolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
              .build()
 
-        val preview = Preview.Builder()
+        val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
-            .build()
+
+        // Apply Frame Rate using Camera2Interop
+        val extender = Camera2Interop.Extender(previewBuilder)
+        extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(targetFps, targetFps))
+
+        val preview = previewBuilder.build()
             
         preview.setSurfaceProvider(previewView.surfaceProvider)
 

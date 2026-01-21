@@ -56,6 +56,10 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Timelapse**: Record video with frame intervals.
 - **Burst Mode**: Hold shutter for rapid capture.
 
+### 3.3 Video Enhancements (Completed)
+- **Frame Rate**: Configurable 30/60 FPS.
+- **Resolution**: Toggle between HD, FHD, 4K.
+
 ## Phase 4: Intelligence & Polishing
 - **AI Scene Detection**: Highlight text, faces, or objects.
 - **Gallery "Film Strip"**: Horizontal film strip of recent photos at the bottom of the camera view (Dynamic).
