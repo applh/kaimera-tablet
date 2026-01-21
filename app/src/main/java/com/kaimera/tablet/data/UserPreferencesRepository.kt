@@ -26,6 +26,8 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_CAPTURE_MODE = intPreferencesKey("capture_mode") // 0: Latency, 1: Quality
         val KEY_IS_DEBUG_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("is_debug_mode")
         val KEY_SCAN_QR_CODES = androidx.datastore.preferences.core.booleanPreferencesKey("scan_qr_codes")
+        val KEY_AWB_MODE = intPreferencesKey("awb_mode") // CaptureRequest.CONTROL_AWB_MODE
+        val KEY_TORCH_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("torch_enabled")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -63,6 +65,12 @@ class UserPreferencesRepository(private val context: Context) {
 
     val scanQrCodes: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[KEY_SCAN_QR_CODES] ?: false }
+
+    val awbMode: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[KEY_AWB_MODE] ?: 1 } // Default to 1 (AUTO)
+
+    val torchEnabled: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[KEY_TORCH_ENABLED] ?: false }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -133,6 +141,18 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setScanQrCodes(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_SCAN_QR_CODES] = enabled
+        }
+    }
+
+    suspend fun setAwbMode(mode: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_AWB_MODE] = mode
+        }
+    }
+
+    suspend fun setTorchEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_TORCH_ENABLED] = enabled
         }
     }
 }

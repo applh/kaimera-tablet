@@ -74,6 +74,9 @@ class CameraManager(private val context: Context) {
     private val _detectedQrCode = MutableStateFlow<String?>(null)
     val detectedQrCode: StateFlow<String?> = _detectedQrCode.asStateFlow()
 
+    private val _torchEnabled = MutableStateFlow(false)
+    val torchEnabled: StateFlow<Boolean> = _torchEnabled.asStateFlow()
+
     private var imageAnalysis: ImageAnalysis? = null
 
     init {
@@ -121,7 +124,9 @@ class CameraManager(private val context: Context) {
         videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
         targetFps: Int = 30,
         windowSize: android.util.Size, // Use full size instead of boolean
-        scanQrCodes: Boolean = false
+        scanQrCodes: Boolean = false,
+        whiteBalanceMode: Int = CaptureRequest.CONTROL_AWB_MODE_AUTO,
+        torchEnabled: Boolean = false
     ) {
         val provider = cameraProvider ?: return
 
@@ -186,9 +191,10 @@ class CameraManager(private val context: Context) {
         val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
 
-        // Apply Frame Rate using Camera2Interop
-        val extender = Camera2Interop.Extender(previewBuilder)
-        extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(targetFps, targetFps))
+        // Apply Frame Rate and White Balance using Camera2Interop
+        Camera2Interop.Extender(previewBuilder)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(targetFps, targetFps))
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
             
@@ -209,6 +215,7 @@ class CameraManager(private val context: Context) {
                 *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
+            setTorch(torchEnabled) // Apply torch state after binding
         } catch (e: Exception) {
             Log.e("CameraManager", "Binding failed", e)
         }
@@ -224,7 +231,9 @@ class CameraManager(private val context: Context) {
         captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
         extensionMode: Int = ExtensionMode.NONE,
         windowSize: android.util.Size, // Use full size
-        scanQrCodes: Boolean = false
+        scanQrCodes: Boolean = false,
+        whiteBalanceMode: Int = CaptureRequest.CONTROL_AWB_MODE_AUTO,
+        torchEnabled: Boolean = false
     ) {
         val provider = cameraProvider ?: return
 
@@ -244,8 +253,6 @@ class CameraManager(private val context: Context) {
         
         // Update availability for the current lens
         checkExtensionAvailability(lensFacing)
-
-        _flashMode.value = flashMode
 
         _flashMode.value = flashMode
 
@@ -273,9 +280,14 @@ class CameraManager(private val context: Context) {
             .setResolutionStrategy(resolutionStrategy)
             .build()
 
-        val preview = Preview.Builder()
+        val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
-            .build()
+        
+        // Apply White Balance to Preview
+        Camera2Interop.Extender(previewBuilder)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
+
+        val preview = previewBuilder.build()
         preview.setSurfaceProvider(previewView.surfaceProvider)
 
         var cameraSelector = CameraSelector.Builder()
@@ -293,12 +305,17 @@ class CameraManager(private val context: Context) {
             }
         }
 
-        imageCapture = ImageCapture.Builder()
+        val imageCaptureBuilder = ImageCapture.Builder()
             .setCaptureMode(captureMode)
             .setResolutionSelector(resolutionSelector)
             .setFlashMode(flashMode)
             .setJpegQuality(jpegQuality)
-            .build()
+
+        // Apply White Balance to ImageCapture
+        Camera2Interop.Extender(imageCaptureBuilder)
+            .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
+
+        imageCapture = imageCaptureBuilder.build()
 
         try {
             provider.unbindAll()
@@ -311,6 +328,7 @@ class CameraManager(private val context: Context) {
                 *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
+            setTorch(torchEnabled) // Apply torch state after binding
         } catch (e: Exception) {
             Log.e("CameraManager", "Binding failed", e)
         }
@@ -346,6 +364,11 @@ class CameraManager(private val context: Context) {
     fun setFlashMode(mode: Int) {
         _flashMode.value = mode
         imageCapture?.flashMode = mode
+    }
+
+    fun setTorch(enabled: Boolean) {
+        camera?.cameraControl?.enableTorch(enabled)
+        _torchEnabled.value = enabled
     }
 
     fun focus(previewView: PreviewView, x: Float, y: Float) {

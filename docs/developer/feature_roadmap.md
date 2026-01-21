@@ -47,9 +47,9 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 *Goal: Appeal to power users.*
 
 ### 3.1 Pro Control Panel
-- **Exposure Compensation**: Slider to adjust +/- EV.
-- **White Balance**: Presets (Cloudy, Sunny, Incandescent, Fluorescent, Auto).
-- **ISO/Shutter Priority**: (If supported by hardware/Camera2Interop) Monitor and display current values.
+- **Exposure Compensation (Completed)**: Slider to adjust +/- EV.
+- **White Balance (Completed)**: Presets including Cloudy, Sunny, Incandescent, Fluorescent, and Auto.
+- **Torch Control (Completed)**: Dedicated flashlight toggle for photos/video.
 
 ### 3.2 Advanced Modes
 - **QR Code Scanner (Completed)**: Dedicated toggle in sidebar with real-time ML Kit detection.

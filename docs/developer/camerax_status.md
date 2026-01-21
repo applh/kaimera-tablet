@@ -50,7 +50,8 @@
 ### Advanced Controls
 - **Exposure Compensation**: ✅ Implemented.
     - *Features*: Manual offset (+/- EV) via slider in Pro mode.
-- **Torch (Flashlight)**: ❌ `CameraControl.enableTorch` (distinct from Flash Mode).
+- **Torch (Flashlight)**: ✅ Implemented.
+    - *Features*: Constant light toggle in sidebar.
 - **Auto-Focus Modes**: ❌ Continuous AF vs Auto vs Locked (currently just tap-to-meter).
 - **Concurrent Cameras**: ❌ Multi-camera API (e.g., streaming front/back simultaneously).
 

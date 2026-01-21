@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.hardware.camera2.CaptureRequest
 import android.widget.Toast
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -58,6 +59,8 @@ import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.FlashlightOn
+import androidx.compose.material.icons.filled.FlashlightOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -133,6 +136,8 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
     val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
     val scanQrCodes by userPreferences.scanQrCodes.collectAsState(initial = false)
+    val awbMode by userPreferences.awbMode.collectAsState(initial = 1)
+    val torchEnabled by userPreferences.torchEnabled.collectAsState(initial = false)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -164,6 +169,8 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             captureMode = captureMode,
             isDebugMode = isDebugMode,
             scanQrCodes = scanQrCodes,
+            awbMode = awbMode,
+            torchEnabled = torchEnabled,
             onFlashModeChange = { newMode -> 
                 scope.launch { 
                     userPreferences.setFlashMode(newMode)
@@ -173,6 +180,17 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             onScanQrCodesChange = { enabled ->
                 scope.launch {
                     userPreferences.setScanQrCodes(enabled)
+                }
+            },
+            onAwbModeChange = { mode ->
+                scope.launch {
+                    userPreferences.setAwbMode(mode)
+                }
+            },
+            onTorchChange = { enabled ->
+                scope.launch {
+                    userPreferences.setTorchEnabled(enabled)
+                    cameraManager.setTorch(enabled)
                 }
             }
         )
@@ -206,8 +224,12 @@ fun CameraContent(
     captureMode: Int,
     isDebugMode: Boolean,
     scanQrCodes: Boolean,
+    awbMode: Int,
+    torchEnabled: Boolean,
     onFlashModeChange: (Int) -> Unit,
-    onScanQrCodesChange: (Boolean) -> Unit
+    onScanQrCodesChange: (Boolean) -> Unit,
+    onAwbModeChange: (Int) -> Unit,
+    onTorchChange: (Boolean) -> Unit
 ) {
     // Camera Manager State
     val zoomRatio by cameraManager.zoomState.collectAsState()
@@ -327,7 +349,7 @@ fun CameraContent(
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
 
-        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, maxWidthDp, maxHeightDp) {
+        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
             val view = previewView ?: return@LaunchedEffect
             val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
             if (cameraMode == 0) {
@@ -341,7 +363,9 @@ fun CameraContent(
                     captureMode = captureMode,
                     extensionMode = extensionMode,
                     windowSize = windowSize,
-                    scanQrCodes = scanQrCodes
+                    scanQrCodes = scanQrCodes,
+                    whiteBalanceMode = awbMode,
+                    torchEnabled = torchEnabled
                 )
             } else {
                 cameraManager.bindVideoPreview(
@@ -351,7 +375,9 @@ fun CameraContent(
                     videoResolutionTier = videoResolutionTier,
                     targetFps = videoFps,
                     windowSize = windowSize,
-                    scanQrCodes = scanQrCodes
+                    scanQrCodes = scanQrCodes,
+                    whiteBalanceMode = awbMode,
+                    torchEnabled = torchEnabled
                 )
             }
         }
@@ -496,9 +522,18 @@ fun CameraContent(
                                 tint = Color.White
                             )
                         }
+
+                        // Torch Toggle
+                        IconButton(onClick = { 
+                            onTorchChange(!torchEnabled)
+                        }) {
+                            Icon(
+                                imageVector = if (torchEnabled) Icons.Filled.FlashlightOn else Icons.Filled.FlashlightOff, 
+                                contentDescription = "Torch", 
+                                tint = if (torchEnabled) Color.Yellow else Color.White
+                            )
+                        }
                         
-
-
                         // Extension Toggle (Only if extensions are available)
                         if (supportedExtensions.isNotEmpty() && cameraMode == 0) {
                              IconButton(onClick = { 
@@ -562,6 +597,31 @@ fun CameraContent(
                                     valueRange = exposureRange.lower.toFloat()..exposureRange.upper.toFloat(),
                                     modifier = Modifier.width(120.dp)
                                 )
+                                
+                                // White Balance Presets
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                ) {
+                                    val modes = listOf(
+                                        CaptureRequest.CONTROL_AWB_MODE_AUTO to "Auto",
+                                        CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT to "Sunny",
+                                        CaptureRequest.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT to "Cloud",
+                                        CaptureRequest.CONTROL_AWB_MODE_FLUORESCENT to "Fluo",
+                                        CaptureRequest.CONTROL_AWB_MODE_INCANDESCENT to "Inc"
+                                    )
+                                    for ((mode, label) in modes) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(if (awbMode == mode) Color.Yellow.copy(alpha=0.3f) else Color.Transparent)
+                                                .clickable { onAwbModeChange(mode) }
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(label, color = if (awbMode == mode) Color.Yellow else Color.White, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
                             }
                         }
 

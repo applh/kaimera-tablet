@@ -12,7 +12,7 @@
     - [x] Implement `ImageAnalysis` UseCase in `CameraManager.kt` <!-- id: 9 -->
     - [x] Create QR Code analyzer logic <!-- id: 10 -->
     - [x] Add UI overlay for QR detection results <!-- id: 11 -->
-- [ ] Implement Pro Controls (Torch & White Balance) <!-- id: 12 -->
-    - [ ] Add Torch toggle to `CameraManager` and UI <!-- id: 13 -->
-    - [ ] Add White Balance presets (Auto, Sunny, Cloudy, etc.) <!-- id: 14 -->
-    - [ ] Update `CameraScreen` controls column <!-- id: 15 -->
+- [x] Implement Pro Controls (Torch & White Balance) <!-- id: 12 -->
+    - [x] Add Torch toggle to `CameraManager` and UI <!-- id: 13 -->
+    - [x] Add White Balance presets (Auto, Sunny, Cloudy, etc.) <!-- id: 14 -->
+    - [x] Update `CameraScreen` controls column <!-- id: 15 -->
