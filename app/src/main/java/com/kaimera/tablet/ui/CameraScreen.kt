@@ -223,7 +223,7 @@ fun CameraContent(
                     // We want to rotate the crosshairs OPPOSITE to device tilt to keep them horizontal.
                     val angleRad = kotlin.math.atan2(x.toDouble(), y.toDouble())
                     val angleDeg = Math.toDegrees(angleRad).toFloat()
-                    rotationAngle = -angleDeg
+                    rotationAngle = angleDeg
 
                     // Level logic: Check if aligned to 0, 90, 180, 270 within threshold
                     val normalizedAngle = (Math.abs(angleDeg) % 90)
