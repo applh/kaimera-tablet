@@ -7,6 +7,12 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.DisposableEffect
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -18,6 +24,10 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.core.AspectRatio
+import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,6 +81,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
@@ -108,6 +119,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val gridCols by userPreferences.gridCols.collectAsState(initial = 0)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
     val flashModePref by userPreferences.flashMode.collectAsState(initial = 0)
+    val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 0)
+    val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
+    val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -129,6 +143,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             gridCols = gridCols,
             timerSeconds = timerSeconds,
             flashModePref = flashModePref,
+            resolutionTier = resolutionTier,
+            jpegQuality = jpegQuality,
+            circleRadiusPercent = circleRadiusPercent,
             onFlashModeChange = { newMode -> 
                 scope.launch { userPreferences.setFlashMode(newMode) }
             }
@@ -154,10 +171,16 @@ fun CameraContent(
     gridCols: Int,
     timerSeconds: Int,
     flashModePref: Int,
+    resolutionTier: Int,
+    jpegQuality: Int,
+    circleRadiusPercent: Int,
     onFlashModeChange: (Int) -> Unit
 ) {
     // CameraProvider State
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    
+    // View State (for dynamic rebinding)
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
     
     var preview by remember { mutableStateOf<Preview?>(null) }
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
@@ -179,6 +202,48 @@ fun CameraContent(
     // Focus State
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
     
+    // Level Sensor State
+    var isLevel by remember { mutableStateOf(false) }
+    var rotationAngle by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(Unit) {
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY) ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                event?.let {
+                    val x = it.values[0]
+                    val y = it.values[1]
+                    
+                    // Calculate rotation angle (roll)
+                    // atan2(x, y) gives angle in radians relative to Y axis
+                    // If device is portrait upright: x~0, y~9.8 -> angle 0
+                    // If device is landscape (left): x~9.8, y~0 -> angle 90
+                    // We want to rotate the crosshairs OPPOSITE to device tilt to keep them horizontal.
+                    val angleRad = kotlin.math.atan2(x.toDouble(), y.toDouble())
+                    val angleDeg = Math.toDegrees(angleRad).toFloat()
+                    rotationAngle = angleDeg
+
+                    // Level logic: Check if aligned to 0, 90, 180, 270 within threshold
+                    val normalizedAngle = (Math.abs(angleDeg) % 90)
+                    val threshold = 1.0 // Degrees
+                    // Check deviation from nearest quadrant
+                    val deviation = if (normalizedAngle > 45) 90 - normalizedAngle else normalizedAngle
+                    
+                    isLevel = deviation < threshold
+                }
+            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        sensorManager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
+
+        onDispose {
+            sensorManager.unregisterListener(listener)
+        }
+    }
+
     // Flash State (Camera Control)
     var currentCameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
     
@@ -216,7 +281,7 @@ fun CameraContent(
             }
             isTimerRunning = false
             if (cameraMode == 0) {
-                takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                takePhoto(context, imageCapture) { uri ->
                     lastImageUri = uri
                 }
             } else {
@@ -256,19 +321,57 @@ fun CameraContent(
     }
 
     // Dynamic Camera Re-binding logic
-    LaunchedEffect(cameraProvider, lensFacing, cameraMode) {
+    // Dynamic Camera Re-binding logic
+    LaunchedEffect(cameraProvider, lensFacing, cameraMode, resolutionTier, jpegQuality, previewView) {
         val provider = cameraProvider ?: return@LaunchedEffect
-        val prev = preview ?: return@LaunchedEffect
+        val view = previewView ?: return@LaunchedEffect
         
         try {
             provider.unbindAll()
+            
+            // 1. Resolution Logic
+            val resolutionStrategy = when(resolutionTier) {
+                0 -> ResolutionStrategy(Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                2 -> ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY 
+                else -> ResolutionStrategy(Size(1920, 1080), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER) 
+            }
+            val resolutionSelector = ResolutionSelector.Builder()
+                .setResolutionStrategy(resolutionStrategy)
+                .build()
+
+            // 2. Preview UseCase
+            val prev = Preview.Builder()
+                .setResolutionSelector(resolutionSelector)
+                .build()
+            
+            prev.setSurfaceProvider(view.surfaceProvider)
+            preview = prev // Update state
+
+            // 3. ImageCapture UseCase
+            val imgCap = ImageCapture.Builder()
+                .setResolutionSelector(resolutionSelector)
+                .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                .build()
+            imageCapture = imgCap
+
+            // 4. VideoCapture UseCase
+            val quality = when(resolutionTier) {
+                0 -> Quality.HD
+                2 -> Quality.UHD
+                else -> Quality.FHD
+            }
+            val recorder = Recorder.Builder()
+                .setQualitySelector(QualitySelector.from(quality))
+                .build()
+            val vidCap = VideoCapture.withOutput(recorder)
+            videoCapture = vidCap
+
+            // 5. Bind
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
             
             val camera = if (cameraMode == 0) {
-                 val imgCap = imageCapture ?: return@LaunchedEffect
                  provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, imgCap)
             } else {
-                 val vidCap = videoCapture ?: return@LaunchedEffect
                  provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, vidCap)
             }
             
@@ -288,45 +391,30 @@ fun CameraContent(
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                val previewView = PreviewView(ctx)
+                val view = PreviewView(ctx)
+                previewView = view // Assign state
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
                 cameraProviderFuture.addListener({
                     val provider = cameraProviderFuture.get()
                     cameraProvider = provider
                     
-                    val previewUseCase = Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
-                        preview = it
-                    }
-
-                    val imageCaptureUseCase = ImageCapture.Builder()
-                        .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
-                        .build()
-                    imageCapture = imageCaptureUseCase
-
-                    val recorder = Recorder.Builder()
-                        .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                        .build()
-                    val videoCaptureUseCase = VideoCapture.withOutput(recorder)
-                    videoCapture = videoCaptureUseCase
-
-                    val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                    // UseCases and Binding are handled by LaunchedEffect
                     
-                    previewView.setOnTouchListener { view, event ->
+                    view.setOnTouchListener { v, event ->
                             if (event.action == android.view.MotionEvent.ACTION_UP) {
-                                val factory = previewView.meteringPointFactory
+                                val factory = view.meteringPointFactory
                                 val point = factory.createPoint(event.x, event.y)
                                 val action = FocusMeteringAction.Builder(point).build()
                                 currentCameraControl?.startFocusAndMetering(action)
-                                view.performClick()
+                                v.performClick()
                             }
                             true
                         }
 
                 }, ContextCompat.getMainExecutor(ctx))
 
-                previewView
+                view
             },
             update = { }
         )
@@ -370,6 +458,69 @@ fun CameraContent(
                             strokeWidth = 2f
                         )
                     }
+                }
+            }
+        }
+        
+        // Center Circle Overlay
+        if (circleRadiusPercent > 0) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+                val centerX = width / 2
+                val centerY = height / 2
+                val maxDimension = maxOf(width, height)
+                val radius = (maxDimension * (circleRadiusPercent / 100f)) / 2f
+                
+                val overlayColor = if (isLevel) Color.Green else Color.White.copy(alpha = 0.5f)
+                val strokeStyle = Stroke(width = 3f)
+
+                // Draw Circle (Does not rotate with crosshairs to keep it screen-aligned, or should it?)
+                // User said "crosshaiirs should rotate".
+                // Usually circle stays fixed.
+                drawCircle(
+                    color = overlayColor,
+                    radius = radius,
+                    center = Offset(centerX, centerY),
+                    style = strokeStyle
+                )
+                
+                // Draw Crosshairs (Rotated)
+                rotate(degrees = rotationAngle, pivot = Offset(centerX, centerY)) {
+                     // Draw long lines to Ensure cover screen when rotated
+                     val longDimension = maxDimension * 2f
+                     
+                     // Horizontal
+                     // Left
+                     drawLine(
+                        color = overlayColor,
+                        start = Offset(centerX - radius, centerY),
+                        end = Offset(centerX - longDimension, centerY),
+                        strokeWidth = 2f
+                    )
+                     // Right
+                     drawLine(
+                        color = overlayColor,
+                        start = Offset(centerX + radius, centerY),
+                        end = Offset(centerX + longDimension, centerY),
+                        strokeWidth = 2f
+                    )
+                    
+                    // Vertical
+                    // Top
+                    drawLine(
+                        color = overlayColor,
+                        start = Offset(centerX, centerY - radius),
+                        end = Offset(centerX, centerY - longDimension),
+                        strokeWidth = 2f
+                    )
+                    // Bottom
+                    drawLine(
+                        color = overlayColor,
+                        start = Offset(centerX, centerY + radius),
+                        end = Offset(centerX, centerY + longDimension),
+                        strokeWidth = 2f
+                    )
                 }
             }
         }
@@ -495,7 +646,7 @@ fun CameraContent(
                                             isTimerRunning = true
                                             timerCountdown = timerSeconds
                                         } else {
-                                            takePhoto(context, imageCapture, cameraExecutor) { uri ->
+                                            takePhoto(context, imageCapture) { uri ->
                                                  lastImageUri = uri
                                             }
                                         }
@@ -586,7 +737,6 @@ fun CompactModeButton(
 private fun takePhoto(
     context: Context,
     imageCapture: ImageCapture?,
-    cameraExecutor: ExecutorService,
     onPhotoTaken: (android.net.Uri) -> Unit = {}
 ) {
     val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)

@@ -1,7 +1,12 @@
 package com.kaimera.tablet.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -26,6 +31,10 @@ fun CameraSettings() {
     val gridRows by userPreferences.gridRows.collectAsState(initial = 0)
     val gridCols by userPreferences.gridCols.collectAsState(initial = 0)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
+    val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 0)
+
+    val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
+    val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
 
     Scaffold { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
@@ -34,12 +43,14 @@ fun CameraSettings() {
                 label = "Horizontal Lines (Rows): $gridRows",
                 value = gridRows,
                 range = 0f..10f,
+                steps = 9,
                 onValueChange = { scope.launch { userPreferences.setGridRows(it.roundToInt()) } }
             )
             SettingsSlider(
                 label = "Vertical Lines (Columns): $gridCols",
                 value = gridCols,
                 range = 0f..10f,
+                steps = 9,
                 onValueChange = { scope.launch { userPreferences.setGridCols(it.roundToInt()) } }
             )
 
@@ -50,6 +61,39 @@ fun CameraSettings() {
                 range = 0f..100f,
                 onValueChange = { scope.launch { userPreferences.setTimerSeconds(it.roundToInt()) } }
             )
+
+            // Overlay Settings
+            SettingsSlider(
+                label = "Center Circle Radius: ${circleRadiusPercent}%",
+                value = circleRadiusPercent,
+                range = 0f..100f,
+                onValueChange = { scope.launch { userPreferences.setCircleRadiusPercent(it.roundToInt()) } }
+            )
+
+            // Image Settings
+            // Image Settings
+            Text(text = "Resolution", style = MaterialTheme.typography.bodyMedium)
+            Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                val tiers = listOf("HD (720p)", "FHD (1080p)", "Max")
+                tiers.forEachIndexed { index, label ->
+                    val isSelected = resolutionTier == index
+                    if (isSelected) {
+                        Button(onClick = {}) { Text(label) }
+                    } else {
+                        OutlinedButton(onClick = { scope.launch { userPreferences.setResolutionTier(index) } }) { Text(label) }
+                    }
+                    if (index < tiers.size - 1) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                }
+            }
+
+            SettingsSlider(
+                label = "JPEG Quality: $jpegQuality",
+                value = jpegQuality,
+                range = 1f..100f,
+                onValueChange = { scope.launch { userPreferences.setJpegQuality(it.roundToInt()) } }
+            )
         }
     }
 }
@@ -59,6 +103,7 @@ fun SettingsSlider(
     label: String,
     value: Int,
     range: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
     onValueChange: (Float) -> Unit
 ) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -69,7 +114,8 @@ fun SettingsSlider(
         Slider(
             value = value.toFloat(),
             onValueChange = onValueChange,
-            valueRange = range
+            valueRange = range,
+            steps = steps
         )
     }
 }
