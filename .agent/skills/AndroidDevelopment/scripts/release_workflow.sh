@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
 
 if [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: $0 <commit_message> <tag_version>"
