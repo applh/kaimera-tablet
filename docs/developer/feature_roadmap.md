@@ -4,7 +4,7 @@ This document outlines the planned feature expansion for the Kaimera Tablet Came
 
 We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized increments (Phases).
 
-## Phase 1: Foundation & Usability (Completed v0.0.7+)
+## Phase 1 & 2: Core Foundation & Dynamic Visuals (Completed v0.0.12+)
 *Goal: Polish the core experience and ensure basic features expected of any camera app work flawlessly.*
 
 ### 1.1 Persistent Settings Architecture (Completed)
@@ -26,6 +26,7 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Feature**: Start/Stop video recording with duration timer.
 - **UI**: Compact toggle between Photo/Video modes.
 - **Storage**: Saves to MediaStore (Movies/Kaimera).
+- **Architecture**: Refactored into `CameraManager` and `CameraOverlays`.
 
 ## Phase 2: Dynamic Visuals & Experience
 *Goal: Make the app feel alive and premium ("Dynamic").*
@@ -42,7 +43,7 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Volume Button Shutter**: Allow capturing photo/video using physical volume keys.
 - **Haptic Feedback**: Subtle vibration on capture start/stop.
 
-## Phase 3: Pro & "Options Rich" Features
+## Phase 3: Pro & "Options Rich" Features (In Progress)
 *Goal: Appeal to power users.*
 
 ### 3.1 Pro Control Panel
@@ -70,3 +71,4 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 3.  **Implement Tap-to-Focus**: Add touch listener and focus logic. [Done]
 4.  **Connect Settings**: Verify Grid draws lines and Timer delays capture. [Done]
 5.  **Video Recording**: Implement MediaStore logic and UI. [Done]
+6.  **Modular Refactor**: Split logic into `CameraManager` and state-driven UI. [Done]

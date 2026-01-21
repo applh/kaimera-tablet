@@ -21,6 +21,7 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_RESOLUTION_TIER = intPreferencesKey("resolution_tier") // 0: HD, 1: FHD, 2: MAX
         val KEY_JPEG_QUALITY = intPreferencesKey("jpeg_quality") // 1-100
         val KEY_CIRCLE_RADIUS_PERCENT = intPreferencesKey("circle_radius_percent") // 0-100
+        val KEY_CAPTURE_MODE = intPreferencesKey("capture_mode") // 0: Latency, 1: Quality
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -33,16 +34,19 @@ class UserPreferencesRepository(private val context: Context) {
         .map { preferences -> preferences[KEY_TIMER_SECONDS] ?: 0 }
 
     val flashMode: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[KEY_FLASH_MODE] ?: 0 }
+        .map { preferences -> preferences[KEY_FLASH_MODE] ?: 2 }
 
     val resolutionTier: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[KEY_RESOLUTION_TIER] ?: 0 }
+        .map { preferences -> preferences[KEY_RESOLUTION_TIER] ?: 1 }
 
     val jpegQuality: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_JPEG_QUALITY] ?: 95 }
 
     val circleRadiusPercent: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_CIRCLE_RADIUS_PERCENT] ?: 20 }
+
+    val captureMode: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[KEY_CAPTURE_MODE] ?: 1 } // Default to 1 (Maximize Quality)
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -83,6 +87,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setCircleRadiusPercent(percent: Int) {
         context.dataStore.edit { preferences ->
             preferences[KEY_CIRCLE_RADIUS_PERCENT] = percent
+        }
+    }
+
+    suspend fun setCaptureMode(mode: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CAPTURE_MODE] = mode
         }
     }
 }

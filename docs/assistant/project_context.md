@@ -18,7 +18,9 @@
 ## Key Files
 - `app/src/main/java/com/kaimera/tablet/MainActivity.kt`: Navigation entry.
 - `app/src/main/java/com/kaimera/tablet/ui/LauncherScreen.kt`: Main menu.
-- `app/src/main/java/com/kaimera/tablet/ui/CameraScreen.kt`: Camera implementation.
+- `app/src/main/java/com/kaimera/tablet/ui/CameraScreen.kt`: Main Camera UI.
+- `app/src/main/java/com/kaimera/tablet/camera/CameraManager.kt`: CameraX logic controller.
+- `app/src/main/java/com/kaimera/tablet/ui/CameraOverlays.kt`: Camera overlay drawing logic.
 - `app/src/main/java/com/kaimera/tablet/files/`: Files/Gallery implementation.
 - `app/build.gradle.kts`: Dependency management (includes CameraX, Coil).
 

@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ fun CameraSettings() {
 
     val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
     val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
+    val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
 
     Scaffold { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
@@ -94,6 +96,24 @@ fun CameraSettings() {
                 range = 1f..100f,
                 onValueChange = { scope.launch { userPreferences.setJpegQuality(it.roundToInt()) } }
             )
+
+            // Capture Mode (Toggle First for Landscape UX)
+            Row(modifier = Modifier.padding(vertical = 16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Switch(
+                    checked = captureMode == 1,
+                    onCheckedChange = { isChecked ->
+                        scope.launch { userPreferences.setCaptureMode(if (isChecked) 1 else 0) }
+                    }
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(text = "Prioritize Quality", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = if (captureMode == 1) "Maximizing image quality (slower)" else "Minimizing latency (faster)",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }

@@ -1,54 +1,58 @@
-# Camera Applet Developer Guide
+# Camera Applet Features & CameraX Implementation
 
 ## Overview
-The Camera Applet is a feature-rich camera interface built using **CameraX** and **Jetpack Compose**. It provides standard camera functionalities like preview, capture, zoom, and lens switching, along with a "Pro" style overlay.
+The Camera Applet is a high-performance camera interface designed for the Kaimera Tablet. It leverages **CameraX** for robust device compatibility and **Jetpack Compose** for a modern, reactive UI.
 
 ## Architecture
-The camera implementation is split into:
-- **UI Layer**: `CameraScreen.kt` (Compose UI, controls, overlay).
-- **Settings Layer**: `CameraSettings.kt` (Configuration for Grid, Timer, etc.).
-- **Logic Layer**: Embedded directly in `CameraScreen` using `AndroidView` for the `PreviewView`.
+The implementation follows a modular MVVM-like pattern:
 
-## Key Dependencies
-- **CameraX Core**: `androidx.camera:camera-core`
-- **CameraX Camera2**: `androidx.camera:camera-camera2`
-- **CameraX Lifecycle**: `androidx.camera:camera-lifecycle`
-- **CameraX View**: `androidx.camera:camera-view`
-- **CameraX Video**: `androidx.camera:camera-video`
+- **`CameraManager.kt`**: Encapsulates all CameraX interaction (UseCases, Binding, Capture, State). It exposes `StateFlows` for Zoom, Recording, and Flash status.
+- **`CameraScreen.kt`**: The UI layer. It collects state from `CameraManager` and delegates user actions.
+- **`CameraOverlays.kt`**: Dedicated Composable for drawing complex overlays (Grid, Level, Focus, Crosshairs).
+- **`UserPreferencesRepository`**: Persistent DataStore for settings (Grid size, Resolution, Flash preference).
 
-## Features & Implementation Details
+## Implemented CameraX Features
 
 ### 1. Camera Preview
-The preview is rendered using a `PreviewView` inside an `AndroidView`. It is bound to the lifecycle of the composable's `vLifecycleOwner`.
+- **Implementation**: `Preview` UseCase bound to `PreviewView`.
+- **Dynamic Rebinding**: Preview is automatically re-bound when settings (resolution, lens) change.
+- **Auto-Focus**: Tap-to-focus implemented using `FocusMeteringAction`.
 
-### 2. Zoom Control
-Zoom is managed via `CameraControl.setZoomRatio(float)`. 
-- **Vertical Slider**: Located on the right side, height is dynamically set to 30% of screen height.
-- **Range**: 1x to Device Max (dynamically retrieved via `CameraInfo.getZoomState().maxZoomRatio`).
-- **Feedback**: Current zoom level displayed numerically above the slider.
+### 2. Image Capture
+- **UseCase**: `ImageCapture`
+- **Output**: JPEG files saved to `Pictures/Kaimera`.
+- **Features**: Configurable JPEG quality and resolution tiers.
 
-### 3. Image Capture & Gallery
-- **Capture**: Saves JPEGs to `Pictures/Kaimera` with timestamp naming.
-- **Gallery Integration**: 
-    - A circular thumbnail of the last captured image is displayed.
-    - Clicking the thumbnail navigates to the **Files Applet** (Gallery View).
-    - Image loading is handled by **Coil**.
+### 3. Video Recording
+- **UseCase**: `VideoCapture` with `Recorder`.
+- **Output**: MP4 files saved to `Movies/Kaimera`.
+- **Features**: Audio recording support, real-time duration counter, and thumbnail generation.
 
-### 4. Video Recording
-- **UseCase**: `VideoCapture` with `Recorder` output.
-- **Storage**: Saves MP4s to `Movies/Kaimera`.
-- **Logic**:
-    - **Mode Switching**: Toggles between Photo/Video states.
-    - **Audio Permission**: Request `RECORD_AUDIO` at runtime.
-    - **Recording**: Uses `FileOutputOptions` (or `MediaStoreOutputOptions` for Scoped Storage) to save video.
+### 4. Hardware Controls
+- **Zoom**: Vertical slider mapping to `CameraControl.setZoomRatio`. Supports pinch-to-zoom via `PreviewView` (if enabled) or manual slider input.
+- **Flash**: Supports Off (Default), On, and Auto modes.
+- **Lens Switch**: Seamless toggle between Front (Selfie) and Back (Main) cameras.
 
-### 5. Settings Integration
-Camera settings are isolated in `CameraSettings.kt` but accessed via the main `SettingsScreen`.
-- **Current Settings**:
-    - **Grid Overlay**: Helper lines for composition.
-    - **Timer**: 3s, 10s delay (Implementation pending in `CameraScreen`, UI present).
+### 5. Overlays & Composition
+- **Grid Overlay**: Configurable horizontal/vertical lines for the "Rule of Thirds" or custom layouts.
+- **Level Indicator**: Sensor-based (Gravity/Accelerometer) crosshairs that rotate to stay horizontal, helping users keep the tablet level.
+- **Timer**: 3s, 10s, or custom delays for both photo and video capture.
 
-## Troubleshooting
-- **Permission Denied**: The app requests `CAMERA` permission on first launch. If denied, a slate is shown. Clear app data to reset.
-- **Preview Black**: Ensure the device is not being used by another camera app (adb).
-- **Emulator**: CameraX works on standard Android emulators (Camera2 API supported).
+### 6. Settings Integration
+- **Resolution Tiers**: HD (720p), FHD (1080p - Default), and Max (Highest available).
+- **Quality**: Adjustable JPEG compression level.
+- **Circle Overlay**: Adjustable center circle radius for specific framing needs.
+
+## Dependencies
+```kotlin
+implementation("androidx.camera:camera-core:1.4.0-alpha03")
+implementation("androidx.camera:camera-camera2:1.4.0-alpha03")
+implementation("androidx.camera:camera-lifecycle:1.4.0-alpha03")
+implementation("androidx.camera:camera-video:1.4.0-alpha03")
+implementation("androidx.camera:camera-view:1.4.0-alpha03")
+```
+
+## Future Roadmap
+- [ ] Multi-camera concurrent preview (if hardware supports).
+- [ ] RAW image capture.
+- [ ] Manual exposure and ISO controls.

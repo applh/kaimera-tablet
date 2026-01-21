@@ -13,20 +13,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.DisposableEffect
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.camera.view.PreviewView
-import androidx.camera.core.resolutionselector.ResolutionSelector
-import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraSelector
+import androidx.camera.view.PreviewView
 import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -106,6 +95,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.core.util.Consumer
 import androidx.camera.video.VideoRecordEvent
+import com.kaimera.tablet.camera.CameraManager
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -118,10 +108,11 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val gridRows by userPreferences.gridRows.collectAsState(initial = 2)
     val gridCols by userPreferences.gridCols.collectAsState(initial = 2)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
-    val flashModePref by userPreferences.flashMode.collectAsState(initial = 0)
-    val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 0)
+    val flashModePref by userPreferences.flashMode.collectAsState(initial = 2)
+    val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 1)
     val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
     val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
+    val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -135,10 +126,12 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     }
 
     if (permissionsState.allPermissionsGranted) {
+        val cameraManager = remember { CameraManager(context) }
         CameraContent(
             context = context,
             lifecycleOwner = lifecycleOwner,
             onNavigateToGallery = onNavigateToGallery,
+            cameraManager = cameraManager,
             gridRows = gridRows,
             gridCols = gridCols,
             timerSeconds = timerSeconds,
@@ -146,8 +139,12 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             resolutionTier = resolutionTier,
             jpegQuality = jpegQuality,
             circleRadiusPercent = circleRadiusPercent,
+            captureMode = captureMode,
             onFlashModeChange = { newMode -> 
-                scope.launch { userPreferences.setFlashMode(newMode) }
+                scope.launch { 
+                    userPreferences.setFlashMode(newMode)
+                    cameraManager.setFlashMode(newMode)
+                }
             }
         )
     } else {
@@ -167,6 +164,7 @@ fun CameraContent(
     context: Context,
     lifecycleOwner: LifecycleOwner,
     onNavigateToGallery: () -> Unit,
+    cameraManager: CameraManager,
     gridRows: Int,
     gridCols: Int,
     timerSeconds: Int,
@@ -174,30 +172,26 @@ fun CameraContent(
     resolutionTier: Int,
     jpegQuality: Int,
     circleRadiusPercent: Int,
+    captureMode: Int,
     onFlashModeChange: (Int) -> Unit
 ) {
-    // CameraProvider State
-    var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    // Camera Manager State
+    val zoomRatio by cameraManager.zoomState.collectAsState()
+    val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
+    val isRecording by cameraManager.isRecording.collectAsState()
     
     // View State (for dynamic rebinding)
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     
-    var preview by remember { mutableStateOf<Preview?>(null) }
-    var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
-    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
-    var recording by remember { mutableStateOf<Recording?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
-    var zoomRatio by remember { mutableFloatStateOf(1f) }
-    var maxZoomRatio by remember { mutableFloatStateOf(1f) }
     var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video
-    var isRecording by remember { mutableStateOf(false) }
 
     // Timer State
     var isTimerRunning by remember { mutableStateOf(false) }
     var timerCountdown by remember { mutableStateOf(0) }
     
     // Recording Duration
-    var recordingDurationNanos by remember { mutableLongStateOf(0L) }
+    val recordingDurationNanos by cameraManager.recordingDurationNanos.collectAsState()
 
     // Focus State
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
@@ -244,27 +238,6 @@ fun CameraContent(
         }
     }
 
-    // Flash State (Camera Control)
-    var currentCameraControl by remember { mutableStateOf<androidx.camera.core.CameraControl?>(null) }
-    
-    // Update Camera Flash Mode based on Preference
-    LaunchedEffect(currentCameraControl, flashModePref, cameraMode) {
-        currentCameraControl?.let { control ->
-            if (cameraMode == 0) { // Photo Mode
-                imageCapture?.flashMode = when(flashModePref) {
-                    1 -> ImageCapture.FLASH_MODE_ON
-                    2 -> ImageCapture.FLASH_MODE_AUTO
-                    else -> ImageCapture.FLASH_MODE_OFF
-                }
-                control.enableTorch(false) 
-            } else { // Video Mode
-                 control.enableTorch(flashModePref == 1)
-            }
-        }
-    }
-
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    
     // Thumbnail State
     var lastImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
     
@@ -281,113 +254,37 @@ fun CameraContent(
             }
             isTimerRunning = false
             if (cameraMode == 0) {
-                takePhoto(context, imageCapture) { uri ->
+                cameraManager.takePhoto { uri ->
                     lastImageUri = uri
                 }
             } else {
-                isRecording = true // Trigger actual recording start
-            }
-        }
-    }
-    
-    // Video Recording Logic
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            val videoCap = videoCapture ?: return@LaunchedEffect
-            val newRecording = startRecording(context, videoCap, cameraExecutor) { event ->
-                if (event is VideoRecordEvent.Status) {
-                   recordingDurationNanos = event.recordingStats.recordedDurationNanos
-                } else if (event is VideoRecordEvent.Finalize) {
-                   if (!event.hasError()) {
-                       val uri = event.outputResults.outputUri
-                       if (uri != android.net.Uri.EMPTY) {
-                           lastImageUri = uri
-                       }
-                       val msg = "Video capture succeeded: ${event.outputResults.outputUri}"
-                       Log.d("CameraScreen", msg)
-                   } else {
-                       recording?.close()
-                       recording = null
-                       Log.e("CameraScreen", "Video capture failed: ${event.error}")
-                   }
+                cameraManager.startVideoRecording { uri ->
+                    lastImageUri = uri
                 }
             }
-            recording = newRecording
-        } else {
-            recording?.stop()
-            recording = null
-            recordingDurationNanos = 0L
         }
     }
 
-    // Dynamic Camera Re-binding logic
-    // Dynamic Camera Re-binding logic
-    LaunchedEffect(cameraProvider, lensFacing, cameraMode, resolutionTier, jpegQuality, previewView) {
-        val provider = cameraProvider ?: return@LaunchedEffect
+    // Camera Re-binding logic
+    LaunchedEffect(lensFacing, cameraMode, previewView, resolutionTier, jpegQuality, captureMode) {
         val view = previewView ?: return@LaunchedEffect
-        
-        try {
-            provider.unbindAll()
-            
-            // 1. Resolution Logic
-            val resolutionStrategy = when(resolutionTier) {
-                0 -> ResolutionStrategy(Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
-                2 -> ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY 
-                else -> ResolutionStrategy(Size(1920, 1080), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER) 
-            }
-            val resolutionSelector = ResolutionSelector.Builder()
-                .setResolutionStrategy(resolutionStrategy)
-                .build()
-
-            // 2. Preview UseCase
-            val prev = Preview.Builder()
-                .setResolutionSelector(resolutionSelector)
-                .build()
-            
-            prev.setSurfaceProvider(view.surfaceProvider)
-            preview = prev // Update state
-
-            // 3. ImageCapture UseCase
-            val imgCap = ImageCapture.Builder()
-                .setResolutionSelector(resolutionSelector)
-                .setFlashMode(when(flashModePref) {
-                    1 -> ImageCapture.FLASH_MODE_ON
-                    2 -> ImageCapture.FLASH_MODE_AUTO
-                    else -> ImageCapture.FLASH_MODE_OFF
-                })
-                .build()
-            imageCapture = imgCap
-
-            // 4. VideoCapture UseCase
-            val quality = when(resolutionTier) {
-                0 -> Quality.HD
-                2 -> Quality.UHD
-                else -> Quality.FHD
-            }
-            val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(quality))
-                .build()
-            val vidCap = VideoCapture.withOutput(recorder)
-            videoCapture = vidCap
-
-            // 5. Bind
-            val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-            
-            val camera = if (cameraMode == 0) {
-                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, imgCap)
-            } else {
-                 provider.bindToLifecycle(lifecycleOwner, cameraSelector, prev, vidCap)
-            }
-            
-            currentCameraControl = camera.cameraControl
-            
-            camera.cameraInfo.zoomState.observe(lifecycleOwner) { state ->
-                zoomRatio = state.zoomRatio
-                maxZoomRatio = state.maxZoomRatio
-            }
-            
-        } catch (exc: Exception) {
-            Log.e("CameraScreen", "Camera binding failed", exc)
+        if (cameraMode == 0) {
+            cameraManager.bindPhotoPreview(
+                lifecycleOwner, 
+                view, 
+                lensFacing, 
+                flashMode = flashModePref,
+                resolutionTier = resolutionTier,
+                jpegQuality = jpegQuality,
+                captureMode = captureMode
+            )
+        } else {
+            cameraManager.bindVideoPreview(
+                lifecycleOwner, 
+                view, 
+                lensFacing,
+                resolutionTier = resolutionTier
+            )
         }
     }
 
@@ -395,139 +292,29 @@ fun CameraContent(
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                val view = PreviewView(ctx)
-                previewView = view // Assign state
-                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-
-                cameraProviderFuture.addListener({
-                    val provider = cameraProviderFuture.get()
-                    cameraProvider = provider
-                    
-                    // UseCases and Binding are handled by LaunchedEffect
-                    
+                PreviewView(ctx).also { view ->
+                    previewView = view
                     view.setOnTouchListener { v, event ->
-                            if (event.action == android.view.MotionEvent.ACTION_UP) {
-                                val factory = view.meteringPointFactory
-                                val point = factory.createPoint(event.x, event.y)
-                                val action = FocusMeteringAction.Builder(point).build()
-                                currentCameraControl?.startFocusAndMetering(action)
-                                v.performClick()
-                            }
-                            true
+                        if (event.action == android.view.MotionEvent.ACTION_UP) {
+                            cameraManager.focus(view, event.x, event.y)
+                            v.performClick()
                         }
-
-                }, ContextCompat.getMainExecutor(ctx))
-
-                view
+                        true
+                    }
+                }
             },
             update = { }
         )
 
-        // Focus Indicator
-        focusPoint?.let { offset ->
-            Box(modifier = Modifier.fillMaxSize()) {
-                 Canvas(modifier = Modifier.fillMaxSize()) {
-                      drawCircle(Color.Yellow, radius = 30f, center = offset, style = Stroke(width = 3f))
-                 }
-            }
-        }
-        
-        // Grid Overlay
-        if (gridRows > 0 || gridCols > 0) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val width = size.width
-                val height = size.height
-                
-                if (gridRows > 0) {
-                    val rowHeight = height / (gridRows + 1)
-                    for (i in 1..gridRows) {
-                        val y = rowHeight * i
-                        drawLine(
-                            color = Color.White.copy(alpha = 0.5f),
-                            start = Offset(0f, y),
-                            end = Offset(width, y),
-                            strokeWidth = 2f
-                        )
-                    }
-                }
-                
-                if (gridCols > 0) {
-                    val colWidth = width / (gridCols + 1)
-                    for (i in 1..gridCols) {
-                        val x = colWidth * i
-                         drawLine(
-                            color = Color.White.copy(alpha = 0.5f),
-                            start = Offset(x, 0f),
-                            end = Offset(x, height),
-                            strokeWidth = 2f
-                        )
-                    }
-                }
-            }
-        }
-        
-        // Center Circle Overlay
-        if (circleRadiusPercent > 0) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val width = size.width
-                val height = size.height
-                val centerX = width / 2
-                val centerY = height / 2
-                val maxDimension = maxOf(width, height)
-                val radius = (maxDimension * (circleRadiusPercent / 100f)) / 2f
-                
-                val overlayColor = if (isLevel) Color.Green else Color.White.copy(alpha = 0.5f)
-                val strokeStyle = Stroke(width = 3f)
-
-                // Draw Circle (Does not rotate with crosshairs to keep it screen-aligned, or should it?)
-                // User said "crosshaiirs should rotate".
-                // Usually circle stays fixed.
-                drawCircle(
-                    color = overlayColor,
-                    radius = radius,
-                    center = Offset(centerX, centerY),
-                    style = strokeStyle
-                )
-                
-                // Draw Crosshairs (Rotated)
-                rotate(degrees = rotationAngle, pivot = Offset(centerX, centerY)) {
-                     // Draw long lines to Ensure cover screen when rotated
-                     val longDimension = maxDimension * 2f
-                     
-                     // Horizontal
-                     // Left
-                     drawLine(
-                        color = overlayColor,
-                        start = Offset(centerX - radius, centerY),
-                        end = Offset(centerX - longDimension, centerY),
-                        strokeWidth = 2f
-                    )
-                     // Right
-                     drawLine(
-                        color = overlayColor,
-                        start = Offset(centerX + radius, centerY),
-                        end = Offset(centerX + longDimension, centerY),
-                        strokeWidth = 2f
-                    )
-                    
-                    // Vertical
-                    // Top
-                    drawLine(
-                        color = overlayColor,
-                        start = Offset(centerX, centerY - radius),
-                        end = Offset(centerX, centerY - longDimension),
-                        strokeWidth = 2f
-                    )
-                    // Bottom
-                    drawLine(
-                        color = overlayColor,
-                        start = Offset(centerX, centerY + radius),
-                        end = Offset(centerX, centerY + longDimension),
-                        strokeWidth = 2f
-                    )
-                }
-            }
-        }
+        // Camera Overlays (Grid, Level, Focus)
+        CameraOverlays(
+            gridRows = gridRows,
+            gridCols = gridCols,
+            circleRadiusPercent = circleRadiusPercent,
+            isLevel = isLevel,
+            rotationAngle = rotationAngle,
+            focusPoint = focusPoint
+        )
 
         // Overlay Controls - Updated Polished Layout
         Row(
@@ -567,8 +354,7 @@ fun CameraContent(
                         Slider(
                             value = zoomRatio,
                             onValueChange = { 
-                                zoomRatio = it
-                                currentCameraControl?.setZoomRatio(it)
+                                cameraManager.setZoom(it)
                             },
                             valueRange = 1f..maxZoomRatio,
                             modifier = Modifier
@@ -595,8 +381,8 @@ fun CameraContent(
                             Icon(
                                 imageVector = when(flashModePref) {
                                     1 -> Icons.Filled.FlashOn
-                                    2 -> Icons.Filled.FlashAuto
-                                    else -> Icons.Filled.FlashOff
+                                    2 -> Icons.Filled.FlashOff
+                                    else -> Icons.Filled.FlashAuto
                                 },
                                 contentDescription = "Flash",
                                 tint = Color.White
@@ -636,13 +422,15 @@ fun CameraContent(
                                 onClick = {
                                     if (cameraMode == 1) {
                                         if (isRecording) {
-                                            isRecording = false // This triggers the LaunchedEffect to stop
+                                            cameraManager.stopVideoRecording()
                                         } else {
                                             if (timerSeconds > 0) {
                                                 isTimerRunning = true
                                                 timerCountdown = timerSeconds
                                             } else {
-                                                isRecording = true // This triggers the LaunchedEffect to start
+                                                cameraManager.startVideoRecording { uri ->
+                                                    lastImageUri = uri
+                                                }
                                             }
                                         }
                                     } else {
@@ -650,7 +438,7 @@ fun CameraContent(
                                             isTimerRunning = true
                                             timerCountdown = timerSeconds
                                         } else {
-                                            takePhoto(context, imageCapture) { uri ->
+                                            cameraManager.takePhoto { uri ->
                                                  lastImageUri = uri
                                             }
                                         }
@@ -738,80 +526,8 @@ fun CompactModeButton(
     }
 }
 
-private fun takePhoto(
-    context: Context,
-    imageCapture: ImageCapture?,
-    onPhotoTaken: (android.net.Uri) -> Unit = {}
-) {
-    val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-        .format(System.currentTimeMillis())
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Kaimera")
-        }
-    }
 
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(
-        context.contentResolver,
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        contentValues
-    ).build()
-
-    imageCapture?.takePicture(
-        outputOptions,
-        ContextCompat.getMainExecutor(context),
-        object : ImageCapture.OnImageSavedCallback {
-            override fun onError(exc: ImageCaptureException) {
-                Log.e("CameraScreen", "Photo capture failed: ${exc.message}", exc)
-                Toast.makeText(context, "Photo capture failed", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val msg = "Photo capture succeeded"
-                // Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Log.d("CameraScreen", msg)
-                output.savedUri?.let { onPhotoTaken(it) }
-            }
-        }
-    )
-}
-
-private fun startRecording(
-    context: Context,
-    videoCapture: VideoCapture<Recorder>,
-    executor: ExecutorService,
-    eventListener: Consumer<VideoRecordEvent>
-): Recording {
-    val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-        .format(System.currentTimeMillis())
-        
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-        put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/Kaimera")
-        }
-    }
-
-    val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
-        context.contentResolver,
-        MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-    ).setContentValues(contentValues)
-    .build()
-
-    return videoCapture.output
-        .prepareRecording(context, mediaStoreOutputOptions)
-        .apply {
-            if (androidx.core.content.PermissionChecker.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                androidx.core.content.PermissionChecker.PERMISSION_GRANTED)
-            {
-                withAudioEnabled()
-            }
-        }
-        .start(executor, eventListener) // USE EXECUTOR HERE
-}
+// Legacy functions removed.
 
 private fun formatDuration(nanos: Long): String {
     val seconds = java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(nanos)

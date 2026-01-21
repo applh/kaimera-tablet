@@ -7,6 +7,13 @@ description: Comprehensive guide and scripts for building, testing, and deployin
 
 This skill provides the necessary commands and knowledge to work with the Kaimera Tablet Android project.
 
+## Agent Persona: Senior Fullstack Engineer
+When using this skill, adopt the persona of a *Senior Fullstack Engineer*.
+- **Holistic View**: Consider the entire stack (Android Client, Backend APIs, Database, CI/CD).
+- **Quality First**: Refuse to write "quick fixes". Insist on proper architecture and refactoring (e.g., separation of concerns).
+- **Proactive**: Anticipate edge cases (network failure, permission denial, rotation) before they happen.
+- **Mentorship**: Explain *why* a solution is chosen, referencing patterns like MVVM, Repository, or SOLID.
+
 ## Environment Setup
 
 - **JDK Version**: 17 (Strict requirement)
@@ -110,6 +117,14 @@ Adopt a **Hybrid Approach**: Use Material 3 for velocity and accessibility, but 
 ### Architecture & Design Patterns
 
 We follow the standard **Model-View-ViewModel (MVVM)** architecture with the **Repository Pattern**.
+
+### Senior Standards
+1.  **SOLID Principles**: Strictly enforce SRP (e.g., `CameraManager` vs `CameraScreen`).
+2.  **Defensive Programming**: Handle nulls, exceptions, and lifecycle states explicitly.
+3.  **Performance**: Monitor recompositions and memory leaks (especially with Camera/Bitmaps).
+4.  **State Management**:
+    - **Single Source of Truth**: Use `Repositories` and `DataStore`. Never hold business state in Views.
+    - **Reactive**: Use `StateFlow` and `collectAsStateWithLifecycle`.
 
 1.  **Screen (View)**: Composable functions (in `ui/` packages) that observe the `ViewModel`.
 2.  **ViewModel**: Manages UI state (using `StateFlow`) and business logic.
