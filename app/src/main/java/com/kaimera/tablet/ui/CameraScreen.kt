@@ -350,7 +350,11 @@ fun CameraContent(
             // 3. ImageCapture UseCase
             val imgCap = ImageCapture.Builder()
                 .setResolutionSelector(resolutionSelector)
-                .setFlashMode(ImageCapture.FLASH_MODE_AUTO)
+                .setFlashMode(when(flashModePref) {
+                    1 -> ImageCapture.FLASH_MODE_ON
+                    2 -> ImageCapture.FLASH_MODE_AUTO
+                    else -> ImageCapture.FLASH_MODE_OFF
+                })
                 .build()
             imageCapture = imgCap
 
