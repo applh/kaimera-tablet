@@ -18,7 +18,9 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_GRID_COLS = intPreferencesKey("grid_cols")
         val KEY_TIMER_SECONDS = intPreferencesKey("timer_seconds")
         val KEY_FLASH_MODE = intPreferencesKey("flash_mode")
-        val KEY_RESOLUTION_TIER = intPreferencesKey("resolution_tier") // 0: HD, 1: FHD, 2: MAX
+        val KEY_PHOTO_RESOLUTION_TIER = intPreferencesKey("photo_resolution_tier") // 0: HD, 1: FHD, 2: MAX
+        val KEY_VIDEO_RESOLUTION_TIER = intPreferencesKey("video_resolution_tier") // 0: HD, 1: FHD, 2: 4K
+        val KEY_VIDEO_FPS = intPreferencesKey("video_fps") // 30 or 60
         val KEY_JPEG_QUALITY = intPreferencesKey("jpeg_quality") // 1-100
         val KEY_CIRCLE_RADIUS_PERCENT = intPreferencesKey("circle_radius_percent") // 0-100
         val KEY_CAPTURE_MODE = intPreferencesKey("capture_mode") // 0: Latency, 1: Quality
@@ -36,8 +38,14 @@ class UserPreferencesRepository(private val context: Context) {
     val flashMode: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_FLASH_MODE] ?: 2 }
 
-    val resolutionTier: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[KEY_RESOLUTION_TIER] ?: 1 }
+    val photoResolutionTier: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[KEY_PHOTO_RESOLUTION_TIER] ?: 1 }
+
+    val videoResolutionTier: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[KEY_VIDEO_RESOLUTION_TIER] ?: 1 }
+
+    val videoFps: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[KEY_VIDEO_FPS] ?: 30 }
 
     val jpegQuality: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_JPEG_QUALITY] ?: 95 }
@@ -72,9 +80,21 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    suspend fun setResolutionTier(tier: Int) {
+    suspend fun setPhotoResolutionTier(tier: Int) {
         context.dataStore.edit { preferences ->
-            preferences[KEY_RESOLUTION_TIER] = tier
+            preferences[KEY_PHOTO_RESOLUTION_TIER] = tier
+        }
+    }
+
+    suspend fun setVideoResolutionTier(tier: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_VIDEO_RESOLUTION_TIER] = tier
+        }
+    }
+
+    suspend fun setVideoFps(fps: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_VIDEO_FPS] = fps
         }
     }
 

@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -109,7 +111,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val gridCols by userPreferences.gridCols.collectAsState(initial = 2)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
     val flashModePref by userPreferences.flashMode.collectAsState(initial = 2)
-    val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 1)
+    val photoResolutionTier by userPreferences.photoResolutionTier.collectAsState(initial = 1)
+    val videoResolutionTier by userPreferences.videoResolutionTier.collectAsState(initial = 1)
+    val videoFps by userPreferences.videoFps.collectAsState(initial = 30)
     val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
     val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
     val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
@@ -136,7 +140,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             gridCols = gridCols,
             timerSeconds = timerSeconds,
             flashModePref = flashModePref,
-            resolutionTier = resolutionTier,
+            photoResolutionTier = photoResolutionTier,
+            videoResolutionTier = videoResolutionTier,
+            videoFps = videoFps,
             jpegQuality = jpegQuality,
             circleRadiusPercent = circleRadiusPercent,
             captureMode = captureMode,
@@ -169,7 +175,9 @@ fun CameraContent(
     gridCols: Int,
     timerSeconds: Int,
     flashModePref: Int,
-    resolutionTier: Int,
+    photoResolutionTier: Int,
+    videoResolutionTier: Int,
+    videoFps: Int,
     jpegQuality: Int,
     circleRadiusPercent: Int,
     captureMode: Int,
@@ -179,6 +187,7 @@ fun CameraContent(
     val zoomRatio by cameraManager.zoomState.collectAsState()
     val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
     val isRecording by cameraManager.isRecording.collectAsState()
+    val isPaused by cameraManager.isPaused.collectAsState()
     
     // View State (for dynamic rebinding)
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
@@ -266,7 +275,7 @@ fun CameraContent(
     }
 
     // Camera Re-binding logic
-    LaunchedEffect(lensFacing, cameraMode, previewView, resolutionTier, jpegQuality, captureMode) {
+    LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode) {
         val view = previewView ?: return@LaunchedEffect
         if (cameraMode == 0) {
             cameraManager.bindPhotoPreview(
@@ -274,7 +283,7 @@ fun CameraContent(
                 view, 
                 lensFacing, 
                 flashMode = flashModePref,
-                resolutionTier = resolutionTier,
+                photoResolutionTier = photoResolutionTier,
                 jpegQuality = jpegQuality,
                 captureMode = captureMode
             )
@@ -282,8 +291,9 @@ fun CameraContent(
             cameraManager.bindVideoPreview(
                 lifecycleOwner, 
                 view, 
-                lensFacing,
-                resolutionTier = resolutionTier
+                lensFacing, 
+                videoResolutionTier = videoResolutionTier,
+                targetFps = videoFps
             )
         }
     }
@@ -454,14 +464,36 @@ fun CameraContent(
                                 )
                             }
                             
-                            // Recording Duration Label
+                            // Recording Duration & Pause Control
                             if (cameraMode == 1 && isRecording) {
-                                Text(
-                                    text = formatDuration(recordingDurationNanos),
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically, 
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            if (isPaused) cameraManager.resumeVideoRecording()
+                                            else cameraManager.pauseVideoRecording()
+                                        },
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .background(Color.White.copy(alpha=0.3f), CircleShape)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                                            contentDescription = if (isPaused) "Resume" else "Pause",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    
+                                    Text(
+                                        text = formatDuration(recordingDurationNanos),
+                                        color = if (isPaused) Color.Yellow else Color.Red,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
                             }
                         }
                     }

@@ -55,24 +55,24 @@
 
 ## 3. Implementation Plan for Missing Features
 
-### Priority 1: Image Analysis (QR/ML)
+### Priority 1: Video Quality Improvements
+**Goal**: Higher fidelity video.
+1.  Implement `VideoCapabilities` check.
+2.  Allow fps configuration (30 vs 60 fps) via `CamcorderProfile` checking.
+3.  Pause/Resume recording support.
+
+### Priority 2: Image Analysis (QR/ML)
 **Goal**: Enable "Smart" features.
 1.  Add `ImageAnalysis` UseCase to `bindPreview`.
 2.  Create `Analyzer` interface in `CameraManager`.
 3.  Implement ZXing/MLKit analyzer for QR codes.
 
-### Priority 2: Exposure Control
+### Priority 3: Exposure Control
 **Goal**: Pro-level control.
 1.  Read `ExposureState` from `CameraInfo`.
 2.  Expose `exposureRange` (min/max/step) via StateFlow.
 3.  Add `setExposure(index: Int)` to `CameraManager`.
 4.  UI: Add explicit exposure slider in Pro mode.
-
-### Priority 3: Video Quality Improvements
-**Goal**: Higher fidelity video.
-1.  Implement `VideoCapabilities` check.
-2.  Allow fps configuration (30 vs 60 fps) via `CamcorderProfile` checking.
-3.  Pause/Resume recording support.
 
 ### Priority 4: Vendor Extensions
 **Goal**: Better low-light/HDR performance.

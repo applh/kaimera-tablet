@@ -47,6 +47,9 @@ class CameraManager(private val context: Context) {
     private val _recordingDurationNanos = MutableStateFlow(0L)
     val recordingDurationNanos: StateFlow<Long> = _recordingDurationNanos.asStateFlow()
 
+    private val _isPaused = MutableStateFlow(false)
+    val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
+
     init {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
@@ -58,17 +61,21 @@ class CameraManager(private val context: Context) {
         lifecycleOwner: LifecycleOwner,
         previewView: PreviewView,
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
-        resolutionTier: Int = 1 // 0: HD, 1: FHD, 2: MAX
+        videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
+        targetFps: Int = 30
     ) {
         val provider = cameraProvider ?: return
 
-        val quality = when (resolutionTier) {
+        val quality = when (videoResolutionTier) {
             0 -> Quality.HD
             2 -> Quality.UHD
             else -> Quality.FHD
         }
 
-        val selector = QualitySelector.from(quality)
+        val selector = QualitySelector.from(
+            quality,
+            FallbackStrategy.lowerQualityOrHigherThan(Quality.SD)
+        )
         val recorder = Recorder.Builder()
             .setQualitySelector(selector)
             .build()
@@ -100,7 +107,7 @@ class CameraManager(private val context: Context) {
         previewView: PreviewView,
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
-        resolutionTier: Int = 1,
+        photoResolutionTier: Int = 1,
         jpegQuality: Int = 95,
         captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
     ) {
@@ -108,7 +115,7 @@ class CameraManager(private val context: Context) {
 
         _flashMode.value = flashMode
 
-        val resolutionStrategy = when (resolutionTier) {
+        val resolutionStrategy = when (photoResolutionTier) {
             0 -> ResolutionStrategy(android.util.Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
             2 -> ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
             else -> ResolutionStrategy(android.util.Size(1920, 1080), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
@@ -231,13 +238,23 @@ class CameraManager(private val context: Context) {
                 when (event) {
                     is VideoRecordEvent.Start -> {
                         _isRecording.value = true
+                        _isPaused.value = false
                         _recordingDurationNanos.value = 0L
                     }
+                    is VideoRecordEvent.Pause -> {
+                        _isPaused.value = true
+                    }
+                    is VideoRecordEvent.Resume -> {
+                        _isPaused.value = false
+                    }
                     is VideoRecordEvent.Status -> {
+                        // Only update duration if not paused?
+                        // Actually duration tracking might update during pause but stats.recordedDurationNanos should represent active recording
                         _recordingDurationNanos.value = event.recordingStats.recordedDurationNanos
                     }
                     is VideoRecordEvent.Finalize -> {
                         _isRecording.value = false
+                        _isPaused.value = false
                         _recordingDurationNanos.value = 0L
                         if (!event.hasError()) {
                             onVideoSaved(event.outputResults.outputUri)
@@ -250,6 +267,18 @@ class CameraManager(private val context: Context) {
     fun stopVideoRecording() {
         recording?.stop()
         recording = null
+    }
+
+    fun pauseVideoRecording() {
+        if (_isRecording.value && !_isPaused.value) {
+            recording?.pause()
+        }
+    }
+
+    fun resumeVideoRecording() {
+        if (_isRecording.value && _isPaused.value) {
+            recording?.resume()
+        }
     }
 
     fun release() {
