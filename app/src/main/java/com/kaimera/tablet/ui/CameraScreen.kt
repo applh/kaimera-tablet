@@ -115,8 +115,8 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val userPreferences = remember { UserPreferencesRepository(context) }
 
-    val gridRows by userPreferences.gridRows.collectAsState(initial = 0)
-    val gridCols by userPreferences.gridCols.collectAsState(initial = 0)
+    val gridRows by userPreferences.gridRows.collectAsState(initial = 2)
+    val gridCols by userPreferences.gridCols.collectAsState(initial = 2)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
     val flashModePref by userPreferences.flashMode.collectAsState(initial = 0)
     val resolutionTier by userPreferences.resolutionTier.collectAsState(initial = 0)
@@ -223,7 +223,7 @@ fun CameraContent(
                     // We want to rotate the crosshairs OPPOSITE to device tilt to keep them horizontal.
                     val angleRad = kotlin.math.atan2(x.toDouble(), y.toDouble())
                     val angleDeg = Math.toDegrees(angleRad).toFloat()
-                    rotationAngle = angleDeg
+                    rotationAngle = -angleDeg
 
                     // Level logic: Check if aligned to 0, 90, 180, 270 within threshold
                     val normalizedAngle = (Math.abs(angleDeg) % 90)

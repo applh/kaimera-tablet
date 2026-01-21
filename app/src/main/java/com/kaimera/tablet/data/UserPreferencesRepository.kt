@@ -24,10 +24,10 @@ class UserPreferencesRepository(private val context: Context) {
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[KEY_GRID_ROWS] ?: 0 }
+        .map { preferences -> preferences[KEY_GRID_ROWS] ?: 2 }
 
     val gridCols: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[KEY_GRID_COLS] ?: 0 }
+        .map { preferences -> preferences[KEY_GRID_COLS] ?: 2 }
 
     val timerSeconds: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_TIMER_SECONDS] ?: 0 }
