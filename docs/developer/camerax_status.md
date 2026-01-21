@@ -57,9 +57,9 @@
 
 ### Priority 1: Video Quality Improvements
 **Goal**: Higher fidelity video.
-1.  Implement `VideoCapabilities` check.
-2.  Allow fps configuration (30 vs 60 fps) via `CamcorderProfile` checking.
-3.  Pause/Resume recording support.
+1.  ✅ Implement `VideoCapabilities` check.
+2.  ✅ Allow fps configuration (30 vs 60 fps).
+3.  ✅ Pause/Resume recording support.
 
 ### Priority 2: Image Analysis (QR/ML)
 **Goal**: Enable "Smart" features.
@@ -67,7 +67,7 @@
 2.  Create `Analyzer` interface in `CameraManager`.
 3.  Implement ZXing/MLKit analyzer for QR codes.
 
-### Priority 3: Exposure Control
+### Priority 2: Exposure Control
 **Goal**: Pro-level control.
 1.  Read `ExposureState` from `CameraInfo`.
 2.  Expose `exposureRange` (min/max/step) via StateFlow.

@@ -19,6 +19,7 @@ import androidx.camera.view.PreviewView
 import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import kotlin.math.roundToInt
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
@@ -48,6 +50,7 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -208,6 +211,13 @@ fun CameraContent(
     // Level Sensor State
     var isLevel by remember { mutableStateOf(false) }
     var rotationAngle by remember { mutableFloatStateOf(0f) }
+
+    // Pro Mode State
+    var isProMode by remember { mutableStateOf(false) }
+    val exposureIndex by cameraManager.exposureIndex.collectAsState()
+    val exposureRange by cameraManager.exposureRange.collectAsState()
+    val exposureStep by cameraManager.exposureStep.collectAsState()
+
 
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -406,9 +416,36 @@ fun CameraContent(
                         }
                     }
 
-                    // CENTER: Shutter & Mode
+                    // CENTER: Shutter, Mode, & Pro Controls
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Compact Mode Switch
+                        
+                        // Pro Control Panel (Visible only in Pro Mode)
+                        if (isProMode) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    text = "EV: ${
+                                        if (exposureStep.numerator != 0) 
+                                            "%.1f".format(exposureIndex * exposureStep.numerator.toFloat() / exposureStep.denominator) 
+                                        else "0.0"
+                                    }",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                                Slider(
+                                    value = exposureIndex.toFloat(),
+                                    onValueChange = { cameraManager.setExposureCompensationIndex(it.roundToInt()) },
+                                    valueRange = exposureRange.lower.toFloat()..exposureRange.upper.toFloat(),
+                                    modifier = Modifier.width(120.dp)
+                                )
+                            }
+                        }
+
+                        // Compact Mode Switch & Pro Toggle
                         Row(
                             modifier = Modifier
                                 .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
@@ -423,6 +460,11 @@ fun CameraContent(
                                 icon = Icons.Filled.Videocam,
                                 isSelected = cameraMode == 1,
                                 onClick = { cameraMode = 1 }
+                            )
+                             CompactModeButton(
+                                icon = Icons.Filled.Settings, // Using Settings icon as fallback for Tune
+                                isSelected = isProMode,
+                                onClick = { isProMode = !isProMode }
                             )
                         }
 
@@ -457,7 +499,11 @@ fun CameraContent(
                                 modifier = Modifier.size(80.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (cameraMode == 1 && isRecording) Icons.Filled.Stop else Icons.Filled.PhotoCamera,
+                                    imageVector = when {
+                                        cameraMode == 1 && isRecording -> Icons.Filled.Stop
+                                        cameraMode == 1 -> Icons.Filled.Videocam
+                                        else -> Icons.Filled.PhotoCamera
+                                    },
                                     contentDescription = "Capture",
                                     tint = if (cameraMode == 1) Color.Red else Color.White,
                                     modifier = Modifier.fillMaxSize()
@@ -504,6 +550,7 @@ fun CameraContent(
                         onClick = onNavigateToGallery,
                         modifier = Modifier
                             .size(50.dp)
+                            .border(2.dp, Color.White, CircleShape)
                             .background(Color.DarkGray, CircleShape)
                     ) {
                         if (lastImageUri != null) {

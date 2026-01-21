@@ -50,6 +50,15 @@ class CameraManager(private val context: Context) {
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
 
+    private val _exposureIndex = MutableStateFlow(0)
+    val exposureIndex: StateFlow<Int> = _exposureIndex.asStateFlow()
+
+    private val _exposureRange = MutableStateFlow(android.util.Range(0, 0))
+    val exposureRange: StateFlow<android.util.Range<Int>> = _exposureRange.asStateFlow()
+
+    private val _exposureStep = MutableStateFlow(android.util.Rational.ZERO)
+    val exposureStep: StateFlow<android.util.Rational> = _exposureStep.asStateFlow()
+
     init {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
@@ -159,10 +168,21 @@ class CameraManager(private val context: Context) {
             _zoomState.value = state.zoomRatio
             _maxZoomState.value = state.maxZoomRatio
         }
+        // ExposureState is not LiveData, read initial values
+        camera?.cameraInfo?.exposureState?.let { state ->
+            _exposureIndex.value = state.exposureCompensationIndex
+            _exposureRange.value = state.exposureCompensationRange
+            _exposureStep.value = state.exposureCompensationStep
+        }
     }
 
     fun setZoom(ratio: Float) {
         camera?.cameraControl?.setZoomRatio(ratio)
+    }
+
+    fun setExposureCompensationIndex(index: Int) {
+        camera?.cameraControl?.setExposureCompensationIndex(index)
+        _exposureIndex.value = index
     }
 
     fun setFlashMode(mode: Int) {
