@@ -100,6 +100,39 @@ Look for specific error signatures:
 
 ## Best Practices
 
+### Adaptive & Responsive UX
+Focus on creating flexible, screen-agnostic user interfaces that adapt to various form factors.
+
+1.  **Avoid Hardcoded Dimensions**:
+    - Use `Modifier.fillMaxSize()`, `Modifier.weight()`, or `BoxWithConstraints` instead of rigid `width/height` in DPs.
+    - If fixed sizes are needed, define them in resource files (`dimens.xml`) based on screen configurations.
+
+2.  **Flexible Layouts**:
+    - Prefer `FlowRow`, `LazyVerticalGrid`, or responsive `Row/Column` combinations over static layouts.
+    - Implement "Sliding Panes" or "Master-Detail" flows for larger screens using `BoxWithConstraints` to toggle between list/detail views and side-by-side views.
+
+3.  **Density Independence**:
+    - Use scalable units (`sp` for text).
+    - Ensure touch targets are at least 48dp.
+
+4.  **Rotation Handling**:
+    - Even if the app is currently locked to landscape, build UI components that *can* rotate or reflow gracefully.
+    - Use `Configuration.orientation` to conditionally swap layouts (e.g., `Row` for Landscape, `Column` for Portrait).
+
+### Material Design & Aesthetics
+Adopt a **Hybrid Approach**: Use Material 3 for velocity and accessibility, but customize heavily for the Cyberpunk/Sci-Fi aesthetic.
+
+1.  **Hybrid Component Usage**:
+    - **Standard UI** (Settings, Lists, Dialogs): Use standard Material 3 components (`Switch`, `Slider`, `Button`) for speed and accessibility.
+    - **Hero UI** (HUD, Shutter, deeply custom elements): Build custom Composables from scratch using `Surface` and `Canvas` to achieve specific visual goals without fighting framework constraints.
+
+2.  **Theming & Color**:
+    - **Disable Dynamic Color**: Set `dynamicColor = false` in `Theme.kt` to prevent user wallpaper colors from clashing with the curated Cyberpunk palette.
+    - **Custom Palette**: explicit neon accents (Cyan, Magenta) on dark backgrounds.
+
+3.  **Visual Consistency**:
+    - Use `MaterialTheme` typography and shapes where possible, but override for key headers or display text.
+
 ### Documentation Maintenance
 **CRITICAL**: Always update the relevant documentation after any code change.
 
