@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +60,9 @@ class CameraManager(private val context: Context) {
     private val _exposureStep = MutableStateFlow(android.util.Rational.ZERO)
     val exposureStep: StateFlow<android.util.Rational> = _exposureStep.asStateFlow()
 
+    private val _actualResolution = MutableStateFlow(android.util.Size(0, 0))
+    val actualResolution: StateFlow<android.util.Size> = _actualResolution.asStateFlow()
+
     init {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
@@ -71,7 +75,8 @@ class CameraManager(private val context: Context) {
         previewView: PreviewView,
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
-        targetFps: Int = 30
+        targetFps: Int = 30,
+        windowSize: android.util.Size // Use full size instead of boolean
     ) {
         val provider = cameraProvider ?: return
 
@@ -80,6 +85,15 @@ class CameraManager(private val context: Context) {
             2 -> Quality.UHD
             else -> Quality.FHD
         }
+
+        // For Video, QualitySelector is strictly about resolution checks (SD, HD, FHD, UHD).
+        // It doesn't strictly enforce aspect ratio in the same way ResolutionStrategy does.
+        // However, we want to ensure we don't accidentally pick a "portrait" quality if we want landscape or vice versa,
+        // although usually video qualities are defined by short edge (e.g. 1080p).
+        
+        // A simple QualitySelector will try to find a supported quality.
+        // The orientation of the RECORDED video is handled by rotation, but the PREVIEW aspect ratio matters.
+        // For video, we might just rely on the Preview UseCase adjustment below.
 
         val selector = QualitySelector.from(
             quality,
@@ -90,7 +104,30 @@ class CameraManager(private val context: Context) {
             .build()
         videoCapture = VideoCapture.withOutput(recorder)
 
-        val preview = Preview.Builder().build()
+        // For Preview, we want to match the window aspect ratio to fill it.
+        // If window is closer to 4:3 (aspect ratio 0.75 or 1.33), target 4:3.
+        // If window is closer to 16:9 (aspect ratio 0.56 or 1.77), target 16:9.
+
+        val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
+        val isPortrait = windowSize.width < windowSize.height
+        val aspectRatioStrategy = if (Math.abs(windowRatio - (3.0/4.0)) < 0.1 || Math.abs(windowRatio - (4.0/3.0)) < 0.1) {
+             AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        } else {
+             AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
+        }
+
+        // We still provide a target size for ResolutionStrategy to prefer sizes close to this (e.g. if we want low res)
+        val targetResolution = if (isPortrait) android.util.Size(1080, 1920) else android.util.Size(1920, 1080)
+        
+        val resolutionSelector = ResolutionSelector.Builder()
+             .setAspectRatioStrategy(aspectRatioStrategy)
+             .setResolutionStrategy(ResolutionStrategy(targetResolution, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
+             .build()
+
+        val preview = Preview.Builder()
+            .setResolutionSelector(resolutionSelector)
+            .build()
+            
         preview.setSurfaceProvider(previewView.surfaceProvider)
 
         val cameraSelector = CameraSelector.Builder()
@@ -118,18 +155,36 @@ class CameraManager(private val context: Context) {
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
         photoResolutionTier: Int = 1,
         jpegQuality: Int = 95,
-        captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+        captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
+        windowSize: android.util.Size // Use full size
     ) {
         val provider = cameraProvider ?: return
 
         _flashMode.value = flashMode
 
-        val resolutionStrategy = when (photoResolutionTier) {
-            0 -> ResolutionStrategy(android.util.Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
-            2 -> ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
-            else -> ResolutionStrategy(android.util.Size(1920, 1080), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+        _flashMode.value = flashMode
+
+        val isPortrait = windowSize.width < windowSize.height
+        val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
+        
+        // Dynamic Aspect Ratio Selection
+        val aspectRatioStrategy = if (Math.abs(windowRatio - 0.75f) < 0.15f || Math.abs(windowRatio - 1.33f) < 0.15f) {
+             AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
+        } else {
+             AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
         }
-        val resolutionSelector = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+
+        // Target Size Logic based on Tier
+        val targetWidth = if (photoResolutionTier == 0) 720 else if (photoResolutionTier == 2) 2160 else 1080
+        val targetHeight = if (photoResolutionTier == 0) 1280 else if (photoResolutionTier == 2) 3840 else 1920
+        
+        // We flip dimensions if landscape
+        val targetSize = if (isPortrait) android.util.Size(targetWidth, targetHeight) else android.util.Size(targetHeight, targetWidth)
+
+        val resolutionStrategy = ResolutionStrategy(targetSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+        
+        val resolutionSelector = ResolutionSelector.Builder()
+            .setAspectRatioStrategy(aspectRatioStrategy)
             .setResolutionStrategy(resolutionStrategy)
             .build()
 
@@ -173,6 +228,11 @@ class CameraManager(private val context: Context) {
             _exposureIndex.value = state.exposureCompensationIndex
             _exposureRange.value = state.exposureCompensationRange
             _exposureStep.value = state.exposureCompensationStep
+        }
+        
+        // Capture resolution update
+        imageCapture?.resolutionInfo?.resolution?.let {
+            _actualResolution.value = it
         }
     }
 

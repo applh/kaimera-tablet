@@ -21,8 +21,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.material3.Switch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import com.kaimera.tablet.data.UserPreferencesRepository
+import kotlinx.coroutines.launch
+
 @Composable
 fun SettingsScreen(onNavigate: (String) -> Unit = {}) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val userPreferences = remember { UserPreferencesRepository(context) }
+    val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -47,6 +63,20 @@ fun SettingsScreen(onNavigate: (String) -> Unit = {}) {
                     text = "Build Timestamp: ${dateFormat.format(date)}",
                     style = MaterialTheme.typography.bodyLarge
                 )
+
+                Row(
+                   modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                   verticalAlignment = Alignment.CenterVertically,
+                   horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                      Text("Debug Mode", style = MaterialTheme.typography.bodyLarge)
+                      Switch(
+                          checked = isDebugMode,
+                          onCheckedChange = { 
+                              scope.launch { userPreferences.setDebugMode(it) }
+                          }
+                      )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

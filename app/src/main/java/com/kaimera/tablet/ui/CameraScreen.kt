@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -120,6 +121,7 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val jpegQuality by userPreferences.jpegQuality.collectAsState(initial = 95)
     val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
     val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
+    val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -149,6 +151,7 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             jpegQuality = jpegQuality,
             circleRadiusPercent = circleRadiusPercent,
             captureMode = captureMode,
+            isDebugMode = isDebugMode,
             onFlashModeChange = { newMode -> 
                 scope.launch { 
                     userPreferences.setFlashMode(newMode)
@@ -184,6 +187,7 @@ fun CameraContent(
     jpegQuality: Int,
     circleRadiusPercent: Int,
     captureMode: Int,
+    isDebugMode: Boolean,
     onFlashModeChange: (Int) -> Unit
 ) {
     // Camera Manager State
@@ -217,6 +221,7 @@ fun CameraContent(
     val exposureIndex by cameraManager.exposureIndex.collectAsState()
     val exposureRange by cameraManager.exposureRange.collectAsState()
     val exposureStep by cameraManager.exposureStep.collectAsState()
+    val actualResolution by cameraManager.actualResolution.collectAsState()
 
 
     DisposableEffect(Unit) {
@@ -285,30 +290,39 @@ fun CameraContent(
     }
 
     // Camera Re-binding logic
-    LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode) {
-        val view = previewView ?: return@LaunchedEffect
-        if (cameraMode == 0) {
-            cameraManager.bindPhotoPreview(
-                lifecycleOwner, 
-                view, 
-                lensFacing, 
-                flashMode = flashModePref,
-                photoResolutionTier = photoResolutionTier,
-                jpegQuality = jpegQuality,
-                captureMode = captureMode
-            )
-        } else {
-            cameraManager.bindVideoPreview(
-                lifecycleOwner, 
-                view, 
-                lensFacing, 
-                videoResolutionTier = videoResolutionTier,
-                targetFps = videoFps
-            )
-        }
-    }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val maxWidthDp = maxWidth
+        val maxHeightDp = maxHeight
+        val isPortraitWindow = maxHeight > maxWidth
 
-    Box(modifier = Modifier.fillMaxSize()) {
+        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, maxWidthDp, maxHeightDp) {
+            val view = previewView ?: return@LaunchedEffect
+            val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
+            if (cameraMode == 0) {
+                cameraManager.bindPhotoPreview(
+                    lifecycleOwner, 
+                    view, 
+                    lensFacing, 
+                    flashMode = flashModePref,
+                    photoResolutionTier = photoResolutionTier,
+                    jpegQuality = jpegQuality,
+                    captureMode = captureMode,
+                    windowSize = windowSize
+                )
+            } else {
+                cameraManager.bindVideoPreview(
+                    lifecycleOwner, 
+                    view, 
+                    lensFacing, 
+                    videoResolutionTier = videoResolutionTier,
+                    targetFps = videoFps,
+                    windowSize = windowSize
+                )
+            }
+        }
+
+
+    // Note: BoxWithConstraints replaces the outer Box
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
@@ -578,6 +592,27 @@ fun CameraContent(
                     color = Color.White,
                     fontSize = 120.sp
                  )
+             }
+        }
+
+        // Debug Overlay
+        if (isDebugMode) {
+             Box(
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .padding(top = 32.dp)
+                     .background(Color.Red.copy(alpha = 0.5f)),
+                 contentAlignment = Alignment.Center
+             ) {
+                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                     Text("Debug Mode", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                     Text("Window: $maxWidthDp x $maxHeightDp", color = Color.White)
+                     Text("Actual: ${actualResolution.width}x${actualResolution.height}", color = Color.White)
+                     val ratio = if (actualResolution.height != 0) actualResolution.width.toFloat() / actualResolution.height.toFloat() else 0f
+                     Text("Ratio: %.2f".format(ratio), color = Color.White)
+                     Text("isPortrait: $isPortraitWindow", color = Color.White)
+                     Text("Lens: $lensFacing", color = Color.White)
+                 }
              }
         }
     }

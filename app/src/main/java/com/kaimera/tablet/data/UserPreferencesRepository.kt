@@ -24,6 +24,7 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_JPEG_QUALITY = intPreferencesKey("jpeg_quality") // 1-100
         val KEY_CIRCLE_RADIUS_PERCENT = intPreferencesKey("circle_radius_percent") // 0-100
         val KEY_CAPTURE_MODE = intPreferencesKey("capture_mode") // 0: Latency, 1: Quality
+        val KEY_IS_DEBUG_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("is_debug_mode")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -55,6 +56,9 @@ class UserPreferencesRepository(private val context: Context) {
 
     val captureMode: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[KEY_CAPTURE_MODE] ?: 1 } // Default to 1 (Maximize Quality)
+
+    val isDebugMode: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[KEY_IS_DEBUG_MODE] ?: false }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -113,6 +117,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setCaptureMode(mode: Int) {
         context.dataStore.edit { preferences ->
             preferences[KEY_CAPTURE_MODE] = mode
+        }
+    }
+
+    suspend fun setDebugMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_IS_DEBUG_MODE] = enabled
         }
     }
 }

@@ -11,8 +11,8 @@ android {
         applicationId = "com.kaimera.tablet"
         minSdk = 35
         targetSdk = 35
-        versionCode = 19
-        versionName = "0.0.19"
+        versionCode = 20
+        versionName = "0.0.20"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
