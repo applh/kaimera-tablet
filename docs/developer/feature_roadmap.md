@@ -65,7 +65,7 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Implementation**: `ExtensionsManager` integration with dynamic availability check.
 
 ## Phase 4: Intelligence & Polishing
-- **AI Scene Detection**: Highlight text, faces, or objects.
+- **AI Scene Detection (Completed)**: Real-time subject labeling (Food, Nature, Portrait, etc.) with UI badge.
 - **Gallery "Film Strip"**: Horizontal film strip of recent photos at the bottom of the camera view (Dynamic).
 
 ---

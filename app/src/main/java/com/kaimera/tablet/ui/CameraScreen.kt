@@ -61,12 +61,17 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.FlashlightOn
 import androidx.compose.material.icons.filled.FlashlightOff
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Timelapse
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,14 +93,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -138,6 +146,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val scanQrCodes by userPreferences.scanQrCodes.collectAsState(initial = false)
     val awbMode by userPreferences.awbMode.collectAsState(initial = 1)
     val torchEnabled by userPreferences.torchEnabled.collectAsState(initial = false)
+    val aiSceneDetection by userPreferences.aiSceneDetection.collectAsState(initial = false)
+    val timelapseMode by userPreferences.timelapseMode.collectAsState(initial = false)
+    val timelapseInterval by userPreferences.timelapseInterval.collectAsState(initial = 2000L)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -171,6 +182,9 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             scanQrCodes = scanQrCodes,
             awbMode = awbMode,
             torchEnabled = torchEnabled,
+            aiSceneDetection = aiSceneDetection,
+            timelapseMode = timelapseMode,
+            timelapseInterval = timelapseInterval,
             onFlashModeChange = { newMode -> 
                 scope.launch { 
                     userPreferences.setFlashMode(newMode)
@@ -180,6 +194,22 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             onScanQrCodesChange = { enabled ->
                 scope.launch {
                     userPreferences.setScanQrCodes(enabled)
+                }
+            },
+            onAiSceneDetectionChange = { enabled ->
+                scope.launch {
+                    userPreferences.setAiSceneDetection(enabled)
+                }
+            },
+            onTimelapseModeChange = { enabled ->
+                scope.launch {
+                    userPreferences.setTimelapseMode(enabled)
+                }
+            },
+            onTimelapseIntervalChange = { interval ->
+                scope.launch {
+                    userPreferences.setTimelapseInterval(interval)
+                    cameraManager.setTimelapseInterval(interval)
                 }
             },
             onAwbModeChange = { mode ->
@@ -226,8 +256,14 @@ fun CameraContent(
     scanQrCodes: Boolean,
     awbMode: Int,
     torchEnabled: Boolean,
+    aiSceneDetection: Boolean,
+    timelapseMode: Boolean,
+    timelapseInterval: Long,
     onFlashModeChange: (Int) -> Unit,
     onScanQrCodesChange: (Boolean) -> Unit,
+    onAiSceneDetectionChange: (Boolean) -> Unit,
+    onTimelapseModeChange: (Boolean) -> Unit,
+    onTimelapseIntervalChange: (Long) -> Unit,
     onAwbModeChange: (Int) -> Unit,
     onTorchChange: (Boolean) -> Unit
 ) {
@@ -236,7 +272,10 @@ fun CameraContent(
     val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
     val isRecording by cameraManager.isRecording.collectAsState()
     val isPaused by cameraManager.isPaused.collectAsState()
+    val isTimelapseActive by cameraManager.isTimelapseActive.collectAsState()
+    val timelapseFrames by cameraManager.timelapseFrames.collectAsState()
     val detectedQrCode by cameraManager.detectedQrCode.collectAsState()
+    val detectedScene by cameraManager.detectedScene.collectAsState()
     
     // View State (for dynamic rebinding)
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
@@ -336,8 +375,14 @@ fun CameraContent(
                     lastImageUri = uri
                 }
             } else {
-                cameraManager.startVideoRecording { uri ->
-                    lastImageUri = uri
+                if (timelapseMode) {
+                    cameraManager.startTimelapseRecording(timelapseInterval) { uri ->
+                        lastImageUri = uri
+                    }
+                } else {
+                    cameraManager.startVideoRecording { uri ->
+                        lastImageUri = uri
+                    }
                 }
             }
         }
@@ -349,7 +394,7 @@ fun CameraContent(
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
 
-        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
+        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, aiSceneDetection, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
             val view = previewView ?: return@LaunchedEffect
             val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
             if (cameraMode == 0) {
@@ -364,6 +409,7 @@ fun CameraContent(
                     extensionMode = extensionMode,
                     windowSize = windowSize,
                     scanQrCodes = scanQrCodes,
+                    aiSceneDetection = aiSceneDetection,
                     whiteBalanceMode = awbMode,
                     torchEnabled = torchEnabled
                 )
@@ -376,6 +422,7 @@ fun CameraContent(
                     targetFps = videoFps,
                     windowSize = windowSize,
                     scanQrCodes = scanQrCodes,
+                    aiSceneDetection = aiSceneDetection,
                     whiteBalanceMode = awbMode,
                     torchEnabled = torchEnabled
                 )
@@ -411,39 +458,67 @@ fun CameraContent(
             focusPoint = focusPoint
         )
 
-        // Detected QR Code Result Pill
-        detectedQrCode?.let { qrText ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 32.dp),
-                contentAlignment = Alignment.TopCenter
+        // Top Center Overlays (QR & AI Scene)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 32.dp),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Surface(
-                    color = Color.Black.copy(alpha = 0.7f),
-                    shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color.Cyan.copy(alpha = 0.5f)),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // QR Code Pill
+                if (detectedQrCode != null) {
+                    val qrText = detectedQrCode!!
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(24.dp),
+                        border = BorderStroke(1.dp, Color.Cyan.copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        Icon(Icons.Filled.Link, contentDescription = null, tint = Color.Cyan, modifier = Modifier.size(20.dp))
-                        Text(
-                            text = qrText,
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 200.dp)
-                        )
-                        IconButton(
-                            onClick = { cameraManager.clearDetectedQrCode() },
-                            modifier = Modifier.size(24.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Filled.Close, contentDescription = "Clear", tint = Color.LightGray, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.Link, contentDescription = null, tint = Color.Cyan, modifier = Modifier.size(20.dp))
+                            Text(
+                                text = qrText,
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 200.dp)
+                            )
+                            IconButton(
+                                onClick = { cameraManager.clearDetectedQrCode() },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Filled.Close, contentDescription = "Clear", tint = Color.LightGray, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+                }
+
+                // AI Scene Detection Badge
+                if (aiSceneDetection && detectedScene != null) {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.Magenta.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = detectedScene!!,
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 }
@@ -469,37 +544,98 @@ fun CameraContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Vertical Zoom Slider Column
+                // 1. Zoom and Timelapse Column
                 Column(
                     modifier = Modifier.fillMaxHeight(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Filled.ZoomIn, "Zoom In", tint = Color.White, modifier = Modifier.size(20.dp))
-                    
-                    // Vertical Slider using Layout to rotate constraints properly
-                    // Simple rotation approach
-                    Box(
-                        modifier = Modifier
-                            .height(200.dp)
-                            .width(60.dp), // Increased width for better touch target/thumb
-                        contentAlignment = Alignment.Center
+                    // Vertical Zoom Slider Column (Fixed at 30% size)
+                    val zoomAreaHeight = minOf(maxWidthDp, maxHeightDp) * 0.3f
+                    Column(
+                        modifier = Modifier.height(zoomAreaHeight),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Slider(
-                            value = zoomRatio,
-                            onValueChange = { 
-                                cameraManager.setZoom(it)
-                            },
-                            valueRange = 1f..maxZoomRatio,
+                        Icon(Icons.Filled.ZoomIn, "Zoom In", tint = Color.White, modifier = Modifier.size(20.dp))
+                        
+                        // Vertical Slider with layout rotation to fill available space
+                        Box(
                             modifier = Modifier
-                                .rotate(-90f)
-                                .requiredWidth(200.dp) // Use requiredWidth to bypass 60dp constraint
-                        )
+                                .weight(1f)
+                                .width(64.dp), 
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Slider(
+                                value = zoomRatio,
+                                onValueChange = { 
+                                    cameraManager.setZoomRatio(it)
+                                },
+                                valueRange = 1f..maxZoomRatio,
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        rotationZ = -90f
+                                    }
+                                    .layout { measurable, constraints ->
+                                        val placeable = measurable.measure(
+                                            androidx.compose.ui.unit.Constraints(
+                                                minWidth = constraints.maxHeight,
+                                                maxWidth = constraints.maxHeight,
+                                                minHeight = constraints.minWidth,
+                                                maxHeight = constraints.maxWidth
+                                            )
+                                        )
+                                        layout(placeable.height, placeable.width) {
+                                            placeable.place(
+                                                x = -(placeable.width - placeable.height) / 2,
+                                                y = (placeable.width - placeable.height) / 2
+                                            )
+                                        }
+                                    }
+                                    .width(64.dp), 
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color.White,
+                                    activeTrackColor = Color.White,
+                                    inactiveTrackColor = Color.White.copy(alpha = 0.5f)
+                                )
+                            )
+                        }
+                        
+                        Icon(Icons.Filled.ZoomOut, "Zoom Out", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
 
-                    Icon(Icons.Filled.ZoomOut, "Zoom Out", tint = Color.White, modifier = Modifier.size(20.dp))
+                    if (timelapseMode && cameraMode == 1) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        // Interval Selector "Mini-Pro"
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Filled.History, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
+                            listOf(500L, 1000L, 2000L, 5000L).forEach { interval ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .background(
+                                            if (timelapseInterval == interval) Color.Red else Color.Black.copy(alpha = 0.5f),
+                                            CircleShape
+                                        )
+                                        .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                        .clickable { onTimelapseIntervalChange(interval) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${interval/1000f}s".replace(".0", ""),
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-
+            
                 // 2. Main Controls Column
                 Column(
                     modifier = Modifier.fillMaxHeight(),
@@ -533,8 +669,19 @@ fun CameraContent(
                                 tint = if (torchEnabled) Color.Yellow else Color.White
                             )
                         }
+
+                        // AI Scene Detection Toggle
+                        IconButton(onClick = { 
+                            onAiSceneDetectionChange(!aiSceneDetection)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Psychology, 
+                                contentDescription = "AI Scene Detection", 
+                                tint = if (aiSceneDetection) Color.Magenta else Color.White
+                            )
+                        }
                         
-                        // Extension Toggle (Only if extensions are available)
+                         // Extension Toggle (Only if extensions are available)
                         if (supportedExtensions.isNotEmpty() && cameraMode == 0) {
                              IconButton(onClick = { 
                                 // Cycle: None -> Ext 1 -> Ext 2 -> ... -> None
@@ -549,6 +696,19 @@ fun CameraContent(
                                     imageVector = Icons.Filled.AutoAwesome, 
                                     contentDescription = "Extensions", 
                                     tint = if (extensionMode == ExtensionMode.NONE) Color.White else Color.Yellow
+                                )
+                            }
+                        }
+                        
+                        // Timelapse Toggle (Only in Video Mode)
+                        if (cameraMode == 1) {
+                            IconButton(onClick = { 
+                                onTimelapseModeChange(!timelapseMode)
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Timelapse, 
+                                    contentDescription = "Timelapse", 
+                                    tint = if (timelapseMode) Color.Red else Color.White
                                 )
                             }
                         }
@@ -660,8 +820,14 @@ fun CameraContent(
                                                 isTimerRunning = true
                                                 timerCountdown = timerSeconds
                                             } else {
-                                                cameraManager.startVideoRecording { uri ->
-                                                    lastImageUri = uri
+                                                if (timelapseMode) {
+                                                    cameraManager.startTimelapseRecording(timelapseInterval) { uri ->
+                                                        lastImageUri = uri
+                                                    }
+                                                } else {
+                                                    cameraManager.startVideoRecording { uri ->
+                                                        lastImageUri = uri
+                                                    }
                                                 }
                                             }
                                         }
@@ -715,9 +881,10 @@ fun CameraContent(
                                     }
                                     
                                     Text(
-                                        text = formatDuration(recordingDurationNanos),
+                                        text = if (isTimelapseActive) "Frames: $timelapseFrames" else formatDuration(recordingDurationNanos),
                                         color = if (isPaused) Color.Yellow else Color.Red,
-                                        style = MaterialTheme.typography.labelMedium
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }

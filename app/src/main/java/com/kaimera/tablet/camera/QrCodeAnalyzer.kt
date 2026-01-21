@@ -36,11 +36,6 @@ class QrCodeAnalyzer(
                 .addOnFailureListener {
                     Log.e("QrCodeAnalyzer", "QR detection failed", it)
                 }
-                .addOnCompleteListener {
-                    imageProxy.close()
-                }
-        } else {
-            imageProxy.close()
         }
     }
 }

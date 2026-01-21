@@ -32,6 +32,11 @@ The implementation follows a modular MVVM-like pattern:
     - Real-time duration counter.
     - **Configurable Frame Rate**: Supports 30 FPS and 60 FPS (if supported by hardware) via `Camera2Interop` AE Target FPS Range.
     - Pause/Resume support.
+    - **Timelapse Recording**:
+        - custom "Pulse Recording" implementation using rapid pause/resume cycles.
+        - Adjustable intervals (0.5s - 5s).
+        - Live frame count indicator during recording.
+        - Automatic audio suppression for timelapse video.
 
 ### 4. Hardware Controls
 - **Zoom**: Vertical slider mapping to `CameraControl.setZoomRatio`. Supports pinch-to-zoom via `PreviewView` (if enabled) or manual slider input.
@@ -47,6 +52,11 @@ The implementation follows a modular MVVM-like pattern:
 - **Grid Overlay**: Configurable horizontal/vertical lines for the "Rule of Thirds" or custom layouts.
 - **Level Indicator**: Sensor-based (Gravity/Accelerometer) crosshairs that rotate to stay horizontal, helping users keep the tablet level.
 - **Timer**: 3s, 10s, or custom delays for both photo and video capture.
+- **QR Code Scanner**: Real-time QR detection via ML Kit, providing easy access to links.
+- **AI Scene Detection**: 
+    - Real-time intelligence using ML Kit Image Labeling.
+    - Automated detection of common scenes (Nature, Food, Portrait, etc.).
+    - Stacked UI alerts below system toasts for a clean look.
 
 ### 7. Settings Integration
 - **Resolution Tiers**: HD (720p), FHD (1080p - Default), and Max (Highest available).

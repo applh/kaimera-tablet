@@ -20,12 +20,16 @@
 - **Status**: ✅ Implemented
 - **Configuration**:
     - `CAPTURE_MODE_MINIMIZE_LATENCY` for speed.
+  - [x] Timelapse Mode (using Pulse Recording) <!-- id: 50 -->
+- [ ] Slow Motion (High Frame Rate) <!-- id: 51 -->
     - `FlashMode` integration (Auto/On/Off).
     - `JpegQuality` integration (1-100).
 - **Output**: `MediaStore` (Pictures/Kaimera).
 
 #### C. VideoCapture
 - **Status**: ✅ Implemented
+- **AI Scene Detection**: ✅ Implemented.
+    - *Features*: High-confidence labeling (Food, Nature, Portrait, etc.) with UI badge.
 - **Configuration**:
     - `Recorder` with `QualitySelector` (HD, FHD, UHD).
     - `MediaStoreOutputOptions` for saving.
@@ -43,6 +47,8 @@
 
 ### UseCases
 - **ImageAnalysis**: ✅ Implemented.
+  - [x] Timelapse <!-- id: 68 -->
+- [ ] Panorama <!-- id: 69 -->
     - *Features*: QR Code scanning via ML Kit.
 - **Extensions**: ✅ Implemented.
     - *Features*: Auto, HDR, Night, Bokeh, Face Retouch (Availability depends on device vendor).

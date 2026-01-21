@@ -16,3 +16,28 @@
     - [x] Add Torch toggle to `CameraManager` and UI <!-- id: 13 -->
     - [x] Add White Balance presets (Auto, Sunny, Cloudy, etc.) <!-- id: 14 -->
     - [x] Update `CameraScreen` controls column <!-- id: 15 -->
+- [x] Implement AI Scene Detection <!-- id: 16 -->
+    - [x] Add ML Kit Image Labeling dependency <!-- id: 17 -->
+    - [x] Add AI preference to `UserPreferencesRepository` <!-- id: 18 -->
+    - [x] Create `SceneAnalyzer.kt` <!-- id: 19 -->
+    - [x] Integrate into `CameraManager` (Multiplexing) <!-- id: 20 -->
+    - [x] Add UI Scene Badge and toggle <!-- id: 21 -->
+- [x] Implement Timelapse Recording <!-- id: 22 -->
+    - [x] Research CameraX VideoCapture for Timelapse <!-- id: 23 -->
+    - [x] Add `KEY_TIMELAPSE_INTERVAL` to `UserPreferencesRepository` <!-- id: 24 -->
+    - [x] Update `CameraManager` to support Timelapse mode <!-- id: 25 -->
+    - [x] Add UI for Timelapse (Mode switch & Interval selector) <!-- id: 26 -->
+    - [x] Implement storage & capture logic <!-- id: 27 -->
+    - [x] Show frame count instead of text indicator <!-- id: 28 -->
+- [x] Dynamic Timelapse Adjustment <!-- id: 32 -->
+    - [x] Update `CameraManager` to read interval dynamically <!-- id: 33 -->
+    - [x] Ensure UI controls for interval are active during recording <!-- id: 34 -->
+- [x] Refine Zoom Slider Ergonomics <!-- id: 35 -->
+- [x] Decouple Timelapse UI from Zoom <!-- id: 38 -->
+    - [x] Move Timelapse interval selector to a separate Column/context <!-- id: 39 -->
+    - [x] Ensure Zoom component remains consistent at 30% height <!-- id: 40 -->
+- [x] Debug & Fix Timelapse Recording <!-- id: 29 -->
+    - [x] Investigate pulse duration and latency <!-- id: 30 -->
+    - [x] Test with audio disabled <!-- id: 31 -->
+    - [x] Optimize pulse/pause cycle for reliability <!-- id: 32 -->
+- [ ] Gallery Integration <!-- id: 8 -->

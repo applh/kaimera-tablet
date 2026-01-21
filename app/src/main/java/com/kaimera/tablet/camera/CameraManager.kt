@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -77,7 +78,20 @@ class CameraManager(private val context: Context) {
     private val _torchEnabled = MutableStateFlow(false)
     val torchEnabled: StateFlow<Boolean> = _torchEnabled.asStateFlow()
 
+    private val _detectedScene = MutableStateFlow<String?>(null)
+    val detectedScene: StateFlow<String?> = _detectedScene.asStateFlow()
+
     private var imageAnalysis: ImageAnalysis? = null
+    
+    // Timelapse State
+    private var timelapseJob: Job? = null
+    private val _isTimelapseActive = MutableStateFlow(false)
+    val isTimelapseActive: StateFlow<Boolean> = _isTimelapseActive.asStateFlow()
+
+    private val _timelapseFrames = MutableStateFlow(0)
+    val timelapseFrames: StateFlow<Int> = _timelapseFrames.asStateFlow()
+
+    private var timelapseInterval: Long = 2000L
 
     init {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -123,41 +137,21 @@ class CameraManager(private val context: Context) {
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
         targetFps: Int = 30,
-        windowSize: android.util.Size, // Use full size instead of boolean
+        windowSize: android.util.Size,
         scanQrCodes: Boolean = false,
+        aiSceneDetection: Boolean = false,
         whiteBalanceMode: Int = CaptureRequest.CONTROL_AWB_MODE_AUTO,
         torchEnabled: Boolean = false
     ) {
         val provider = cameraProvider ?: return
-
-        // Image Analysis Use Case
-        if (scanQrCodes) {
-            imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, QrCodeAnalyzer { qrCode ->
-                        _detectedQrCode.value = qrCode
-                    })
-                }
-        } else {
-            imageAnalysis = null
-        }
+        
+        setupImageAnalysis(scanQrCodes, aiSceneDetection)
 
         val quality = when (videoResolutionTier) {
             0 -> Quality.HD
             2 -> Quality.UHD
             else -> Quality.FHD
         }
-
-        // For Video, QualitySelector is strictly about resolution checks (SD, HD, FHD, UHD).
-        // It doesn't strictly enforce aspect ratio in the same way ResolutionStrategy does.
-        // However, we want to ensure we don't accidentally pick a "portrait" quality if we want landscape or vice versa,
-        // although usually video qualities are defined by short edge (e.g. 1080p).
-        
-        // A simple QualitySelector will try to find a supported quality.
-        // The orientation of the RECORDED video is handled by rotation, but the PREVIEW aspect ratio matters.
-        // For video, we might just rely on the Preview UseCase adjustment below.
 
         val selector = QualitySelector.from(
             quality,
@@ -168,10 +162,6 @@ class CameraManager(private val context: Context) {
             .build()
         videoCapture = VideoCapture.withOutput(recorder)
 
-        // For Preview, we want to match the window aspect ratio to fill it.
-        // If window is closer to 4:3 (aspect ratio 0.75 or 1.33), target 4:3.
-        // If window is closer to 16:9 (aspect ratio 0.56 or 1.77), target 16:9.
-
         val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
         val isPortrait = windowSize.width < windowSize.height
         val aspectRatioStrategy = if (Math.abs(windowRatio - (3.0/4.0)) < 0.1 || Math.abs(windowRatio - (4.0/3.0)) < 0.1) {
@@ -180,7 +170,6 @@ class CameraManager(private val context: Context) {
              AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
         }
 
-        // We still provide a target size for ResolutionStrategy to prefer sizes close to this (e.g. if we want low res)
         val targetResolution = if (isPortrait) android.util.Size(1080, 1920) else android.util.Size(1920, 1080)
         
         val resolutionSelector = ResolutionSelector.Builder()
@@ -191,13 +180,11 @@ class CameraManager(private val context: Context) {
         val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
 
-        // Apply Frame Rate and White Balance using Camera2Interop
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(targetFps, targetFps))
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
-            
         preview.setSurfaceProvider(previewView.surfaceProvider)
 
         val cameraSelector = CameraSelector.Builder()
@@ -215,7 +202,7 @@ class CameraManager(private val context: Context) {
                 *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
-            setTorch(torchEnabled) // Apply torch state after binding
+            setTorch(torchEnabled)
         } catch (e: Exception) {
             Log.e("CameraManager", "Binding failed", e)
         }
@@ -230,51 +217,31 @@ class CameraManager(private val context: Context) {
         jpegQuality: Int = 95,
         captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
         extensionMode: Int = ExtensionMode.NONE,
-        windowSize: android.util.Size, // Use full size
+        windowSize: android.util.Size,
         scanQrCodes: Boolean = false,
+        aiSceneDetection: Boolean = false,
         whiteBalanceMode: Int = CaptureRequest.CONTROL_AWB_MODE_AUTO,
         torchEnabled: Boolean = false
     ) {
         val provider = cameraProvider ?: return
-
-        // Image Analysis Use Case
-        if (scanQrCodes) {
-            imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, QrCodeAnalyzer { qrCode ->
-                        _detectedQrCode.value = qrCode
-                    })
-                }
-        } else {
-            imageAnalysis = null
-        }
-        
-        // Update availability for the current lens
+        setupImageAnalysis(scanQrCodes, aiSceneDetection)
         checkExtensionAvailability(lensFacing)
-
         _flashMode.value = flashMode
 
         val isPortrait = windowSize.width < windowSize.height
         val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
         
-        // Dynamic Aspect Ratio Selection
         val aspectRatioStrategy = if (Math.abs(windowRatio - 0.75f) < 0.15f || Math.abs(windowRatio - 1.33f) < 0.15f) {
              AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY
         } else {
              AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY
         }
 
-        // Target Size Logic based on Tier
         val targetWidth = if (photoResolutionTier == 0) 720 else if (photoResolutionTier == 2) 2160 else 1080
         val targetHeight = if (photoResolutionTier == 0) 1280 else if (photoResolutionTier == 2) 3840 else 1920
-        
-        // We flip dimensions if landscape
         val targetSize = if (isPortrait) android.util.Size(targetWidth, targetHeight) else android.util.Size(targetHeight, targetWidth)
 
         val resolutionStrategy = ResolutionStrategy(targetSize, ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
-        
         val resolutionSelector = ResolutionSelector.Builder()
             .setAspectRatioStrategy(aspectRatioStrategy)
             .setResolutionStrategy(resolutionStrategy)
@@ -283,18 +250,14 @@ class CameraManager(private val context: Context) {
         val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
         
-        // Apply White Balance to Preview
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
         preview.setSurfaceProvider(previewView.surfaceProvider)
 
-        var cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
+        var cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
             
-        // Apply Extension directly to the selector
         if (extensionMode != ExtensionMode.NONE && extensionsManager != null) {
             if (extensionsManager!!.isExtensionAvailable(cameraSelector, extensionMode)) {
                 try {
@@ -311,7 +274,6 @@ class CameraManager(private val context: Context) {
             .setFlashMode(flashMode)
             .setJpegQuality(jpegQuality)
 
-        // Apply White Balance to ImageCapture
         Camera2Interop.Extender(imageCaptureBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
@@ -328,7 +290,7 @@ class CameraManager(private val context: Context) {
                 *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
-            setTorch(torchEnabled) // Apply torch state after binding
+            setTorch(torchEnabled)
         } catch (e: Exception) {
             Log.e("CameraManager", "Binding failed", e)
         }
@@ -339,20 +301,17 @@ class CameraManager(private val context: Context) {
             _zoomState.value = state.zoomRatio
             _maxZoomState.value = state.maxZoomRatio
         }
-        // ExposureState is not LiveData, read initial values
         camera?.cameraInfo?.exposureState?.let { state ->
             _exposureIndex.value = state.exposureCompensationIndex
             _exposureRange.value = state.exposureCompensationRange
             _exposureStep.value = state.exposureCompensationStep
         }
-        
-        // Capture resolution update
         imageCapture?.resolutionInfo?.resolution?.let {
             _actualResolution.value = it
         }
     }
 
-    fun setZoom(ratio: Float) {
+    fun setZoomRatio(ratio: Float) {
         camera?.cameraControl?.setZoomRatio(ratio)
     }
 
@@ -364,6 +323,31 @@ class CameraManager(private val context: Context) {
     fun setFlashMode(mode: Int) {
         _flashMode.value = mode
         imageCapture?.flashMode = mode
+    }
+
+    private fun setupImageAnalysis(scanQrCodes: Boolean, aiSceneDetection: Boolean) {
+        if (scanQrCodes || aiSceneDetection) {
+            val qrAnalyzer = if (scanQrCodes) com.kaimera.tablet.camera.QrCodeAnalyzer { qrCode -> 
+                _detectedQrCode.value = qrCode 
+            } else null
+            
+            val sceneAnalyzer = if (aiSceneDetection) com.kaimera.tablet.camera.SceneAnalyzer { scene -> 
+                _detectedScene.value = scene 
+            } else null
+            
+            imageAnalysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(cameraExecutor) { imageProxy ->
+                        qrAnalyzer?.analyze(imageProxy)
+                        sceneAnalyzer?.analyze(imageProxy)
+                        imageProxy.close()
+                    }
+                }
+        } else {
+            imageAnalysis = null
+        }
     }
 
     fun setTorch(enabled: Boolean) {
@@ -384,9 +368,7 @@ class CameraManager(private val context: Context) {
 
     fun takePhoto(onPhotoSaved: (Uri) -> Unit) {
         val imageCapture = imageCapture ?: return
-
-        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-            .format(System.currentTimeMillis())
+        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US).format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
@@ -394,7 +376,6 @@ class CameraManager(private val context: Context) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Kaimera")
             }
         }
-
         val outputOptions = ImageCapture.OutputFileOptions.Builder(
             context.contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -408,7 +389,6 @@ class CameraManager(private val context: Context) {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     outputFileResults.savedUri?.let { onPhotoSaved(it) }
                 }
-
                 override fun onError(exception: ImageCaptureException) {
                     Log.e("CameraManager", "Photo capture failed", exception)
                 }
@@ -417,10 +397,23 @@ class CameraManager(private val context: Context) {
     }
 
     fun startVideoRecording(onVideoSaved: (Uri) -> Unit) {
-        val videoCapture = videoCapture ?: return
+        startRecordingInternal(onVideoSaved, isTimelapse = false)
+    }
 
-        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-            .format(System.currentTimeMillis())
+    fun startTimelapseRecording(intervalMs: Long, onVideoSaved: (Uri) -> Unit) {
+        this.timelapseInterval = intervalMs
+        startRecordingInternal(onVideoSaved, isTimelapse = true, intervalMs = intervalMs)
+    }
+
+    fun setTimelapseInterval(intervalMs: Long) {
+        Log.d("CameraManager", "Updating timelapse interval to: $intervalMs")
+        this.timelapseInterval = intervalMs
+    }
+
+    private fun startRecordingInternal(onVideoSaved: (Uri) -> Unit, isTimelapse: Boolean, intervalMs: Long = 0L) {
+        val recorder = (videoCapture?.output as? Recorder) ?: return
+        _timelapseFrames.value = 0
+        val name = "Kaimera_${System.currentTimeMillis()}.mp4"
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
@@ -429,22 +422,25 @@ class CameraManager(private val context: Context) {
             }
         }
 
-        val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
-            context.contentResolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).setContentValues(contentValues).build()
+        val mediaStoreOutputOptions = MediaStoreOutputOptions
+            .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
+            .build()
 
-        recording = videoCapture.output
-            .prepareRecording(context, mediaStoreOutputOptions)
-            .apply {
-                // Audio recording requires permission check usually, but for now we simplify
-            }
-            .start(cameraExecutor) { event ->
+        val pendingRecording = recorder.prepareRecording(context, mediaStoreOutputOptions)
+        if (!isTimelapse) {
+            pendingRecording.withAudioEnabled()
+        }
+        
+        recording = pendingRecording.start(cameraExecutor) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> {
                         _isRecording.value = true
                         _isPaused.value = false
-                        _recordingDurationNanos.value = 0L
+                        if (isTimelapse) {
+                            _isTimelapseActive.value = true
+                            startTimelapsePulse(intervalMs)
+                        }
                     }
                     is VideoRecordEvent.Pause -> {
                         _isPaused.value = true
@@ -453,14 +449,14 @@ class CameraManager(private val context: Context) {
                         _isPaused.value = false
                     }
                     is VideoRecordEvent.Status -> {
-                        // Only update duration if not paused?
-                        // Actually duration tracking might update during pause but stats.recordedDurationNanos should represent active recording
                         _recordingDurationNanos.value = event.recordingStats.recordedDurationNanos
                     }
                     is VideoRecordEvent.Finalize -> {
                         _isRecording.value = false
                         _isPaused.value = false
+                        _isTimelapseActive.value = false
                         _recordingDurationNanos.value = 0L
+                        timelapseJob?.cancel()
                         if (!event.hasError()) {
                             onVideoSaved(event.outputResults.outputUri)
                         }
@@ -469,7 +465,29 @@ class CameraManager(private val context: Context) {
             }
     }
 
+    private fun startTimelapsePulse(intervalMs: Long) {
+        Log.d("CameraManager", "Starting timelapse pulse loop with interval: $intervalMs")
+        timelapseJob?.cancel()
+        timelapseJob = MainScope().launch {
+            delay(1000) // Initial delay to stabilize
+            while (isActive && _isRecording.value) {
+                Log.d("CameraManager", "Pulse: RESUME")
+                recording?.resume()
+                _timelapseFrames.value++
+                delay(300) // Increased pulse duration for encoder stability
+                
+                if (!isActive || !_isRecording.value) break
+                
+                Log.d("CameraManager", "Pulse: PAUSE")
+                recording?.pause()
+                delay(timelapseInterval)
+            }
+            Log.d("CameraManager", "Timelapse pulse loop ended")
+        }
+    }
+
     fun stopVideoRecording() {
+        timelapseJob?.cancel()
         recording?.stop()
         recording = null
     }

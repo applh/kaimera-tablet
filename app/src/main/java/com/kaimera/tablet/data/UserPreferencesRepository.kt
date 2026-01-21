@@ -28,6 +28,9 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_SCAN_QR_CODES = androidx.datastore.preferences.core.booleanPreferencesKey("scan_qr_codes")
         val KEY_AWB_MODE = intPreferencesKey("awb_mode") // CaptureRequest.CONTROL_AWB_MODE
         val KEY_TORCH_ENABLED = androidx.datastore.preferences.core.booleanPreferencesKey("torch_enabled")
+        val KEY_AI_SCENE_DETECTION = androidx.datastore.preferences.core.booleanPreferencesKey("ai_scene_detection")
+        val KEY_TIMELAPSE_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("timelapse_mode")
+        val KEY_TIMELAPSE_INTERVAL = androidx.datastore.preferences.core.longPreferencesKey("timelapse_interval")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -71,6 +74,15 @@ class UserPreferencesRepository(private val context: Context) {
 
     val torchEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[KEY_TORCH_ENABLED] ?: false }
+
+    val aiSceneDetection: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[KEY_AI_SCENE_DETECTION] ?: false }
+
+    val timelapseMode: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[KEY_TIMELAPSE_MODE] ?: false }
+
+    val timelapseInterval: Flow<Long> = context.dataStore.data
+        .map { preferences -> preferences[KEY_TIMELAPSE_INTERVAL] ?: 2000L } // Default 2s
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -153,6 +165,24 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setTorchEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_TORCH_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setAiSceneDetection(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_AI_SCENE_DETECTION] = enabled
+        }
+    }
+
+    suspend fun setTimelapseMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_TIMELAPSE_MODE] = enabled
+        }
+    }
+
+    suspend fun setTimelapseInterval(intervalMs: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_TIMELAPSE_INTERVAL] = intervalMs
         }
     }
 }
