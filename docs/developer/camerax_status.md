@@ -20,7 +20,7 @@
 - **Status**: ✅ Implemented
 - **Configuration**:
     - `CAPTURE_MODE_MINIMIZE_LATENCY` for speed.
-  - [x] Timelapse Mode (using Pulse Recording) <!-- id: 50 -->
+  - [x] Timelapse Mode (using Pulse Recording - v0.0.24) <!-- id: 50 -->
 - [ ] Slow Motion (High Frame Rate) <!-- id: 51 -->
     - `FlashMode` integration (Auto/On/Off).
     - `JpegQuality` integration (1-100).
@@ -47,7 +47,7 @@
 
 ### UseCases
 - **ImageAnalysis**: ✅ Implemented.
-  - [x] Timelapse <!-- id: 68 -->
+  - [x] Timelapse (v0.0.24) <!-- id: 68 -->
 - [ ] Panorama <!-- id: 69 -->
     - *Features*: QR Code scanning via ML Kit.
 - **Extensions**: ✅ Implemented.

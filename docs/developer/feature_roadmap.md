@@ -53,7 +53,7 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 
 ### 3.2 Advanced Modes
 - **QR Code Scanner (Completed)**: Dedicated toggle in sidebar with real-time ML Kit detection.
-- **Timelapse**: Record video with frame intervals.
+- **Timelapse (Completed)**: Record video with frame intervals (v0.0.24).
 - **Burst Mode (Completed)**: Gestures implemented for rapid capture.
 
 ### 3.3 Video Enhancements (Completed)
