@@ -38,12 +38,17 @@ The implementation follows a modular MVVM-like pattern:
 - **Flash**: Supports Off (Default), On, and Auto modes.
 - **Lens Switch**: Seamless toggle between Front (Selfie) and Back (Main) cameras.
 
-### 5. Overlays & Composition
+### 5. Vendor Extensions
+- **Implementation**: Uses `ExtensionsManager` to query and apply vendor-specific modes.
+- **Modes**: Supports HDR, Night, Bokeh, Face Retouch, and Auto (Availability depends on device manufacturer).
+- **UI**: Displayed as a stars icon ✨ in the sidebar only when supported by the active lens.
+
+### 6. Overlays & Composition
 - **Grid Overlay**: Configurable horizontal/vertical lines for the "Rule of Thirds" or custom layouts.
 - **Level Indicator**: Sensor-based (Gravity/Accelerometer) crosshairs that rotate to stay horizontal, helping users keep the tablet level.
 - **Timer**: 3s, 10s, or custom delays for both photo and video capture.
 
-### 6. Settings Integration
+### 7. Settings Integration
 - **Resolution Tiers**: HD (720p), FHD (1080p - Default), and Max (Highest available).
 - **Quality**: Adjustable JPEG compression level.
 - **Circle Overlay**: Adjustable center circle radius for specific framing needs.

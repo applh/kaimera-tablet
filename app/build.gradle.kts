@@ -11,8 +11,8 @@ android {
         applicationId = "com.kaimera.tablet"
         minSdk = 35
         targetSdk = 35
-        versionCode = 21
-        versionName = "0.0.21"
+        versionCode = 22
+        versionName = "0.0.22"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -76,4 +76,7 @@ dependencies {
     implementation("io.coil-kt:coil-video:2.6.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    
+    // ML Kit
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 }

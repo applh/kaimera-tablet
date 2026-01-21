@@ -42,13 +42,14 @@
 ## 2. Missing CameraX Features
 
 ### UseCases
-- **ImageAnalysis**: ❌ Not implemented.
-    - *Potential Uses*: QR Code scanning, Real-time ML, Histogram generation.
-- **Extensions**: ❌ Not implemented.
-    - *Potential Uses*: Auto-Night Mode, HDR, Face Retouch (Vendor dependent).
+- **ImageAnalysis**: ✅ Implemented.
+    - *Features*: QR Code scanning via ML Kit.
+- **Extensions**: ✅ Implemented.
+    - *Features*: Auto, HDR, Night, Bokeh, Face Retouch (Availability depends on device vendor).
 
 ### Advanced Controls
-- **Exposure Compensation**: ❌ `CameraControl.setExposureCompensationIndex`.
+- **Exposure Compensation**: ✅ Implemented.
+    - *Features*: Manual offset (+/- EV) via slider in Pro mode.
 - **Torch (Flashlight)**: ❌ `CameraControl.enableTorch` (distinct from Flash Mode).
 - **Auto-Focus Modes**: ❌ Continuous AF vs Auto vs Locked (currently just tap-to-meter).
 - **Concurrent Cameras**: ❌ Multi-camera API (e.g., streaming front/back simultaneously).
@@ -61,21 +62,22 @@
 2.  ✅ Allow fps configuration (30 vs 60 fps).
 3.  ✅ Pause/Resume recording support.
 
-### Priority 2: Image Analysis (QR/ML)
-**Goal**: Enable "Smart" features.
-1.  Add `ImageAnalysis` UseCase to `bindPreview`.
-2.  Create `Analyzer` interface in `CameraManager`.
-3.  Implement ZXing/MLKit analyzer for QR codes.
 
 ### Priority 2: Exposure Control
 **Goal**: Pro-level control.
-1.  Read `ExposureState` from `CameraInfo`.
-2.  Expose `exposureRange` (min/max/step) via StateFlow.
-3.  Add `setExposure(index: Int)` to `CameraManager`.
-4.  UI: Add explicit exposure slider in Pro mode.
+1.  ✅ Read `ExposureState` from `CameraInfo`.
+2.  ✅ Expose `exposureRange` (min/max/step) via StateFlow.
+3.  ✅ Add `setExposure(index: Int)` to `CameraManager`.
+4.  ✅ UI: Add explicit exposure slider in Pro mode.
 
-### Priority 4: Vendor Extensions
+### Priority 3: Vendor Extensions
 **Goal**: Better low-light/HDR performance.
-1.  Add `camera-extensions` dependency (already present).
-2.  Check availability: `ExtensionsManager.getInstance(context)`.
-3.  Wrap binding logic with `extensionsManager.getExtensionEnabledCameraSelector`.
+1.  ✅ Add `camera-extensions` dependency (already present).
+2.  ✅ Check availability: `ExtensionsManager.getInstance(context)`.
+3.  ✅ Wrap binding logic with `extensionsManager.getExtensionEnabledCameraSelector`.
+
+### Priority 4: Image Analysis (QR/ML)
+**Goal**: Enable "Smart" features.
+1.  ✅ Add ML Kit dependency.
+2.  ✅ Implement `ImageAnalysis` UseCase.
+3.  ✅ Research/Add QR scanning logic.

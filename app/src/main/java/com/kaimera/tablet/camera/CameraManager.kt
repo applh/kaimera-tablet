@@ -10,6 +10,8 @@ import androidx.camera.core.*
 import androidx.camera.camera2.interop.Camera2Interop
 import android.hardware.camera2.CaptureRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.extensions.ExtensionsManager
+import androidx.camera.extensions.ExtensionMode
 import androidx.camera.video.*
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -29,6 +31,7 @@ class CameraManager(private val context: Context) {
 
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var cameraProvider: ProcessCameraProvider? = null
+    private var extensionsManager: ExtensionsManager? = null
     private var camera: Camera? = null
 
     private var imageCapture: ImageCapture? = null
@@ -65,11 +68,50 @@ class CameraManager(private val context: Context) {
     private val _actualResolution = MutableStateFlow(android.util.Size(0, 0))
     val actualResolution: StateFlow<android.util.Size> = _actualResolution.asStateFlow()
 
+    private val _supportedExtensions = MutableStateFlow<List<Int>>(emptyList())
+    val supportedExtensions: StateFlow<List<Int>> = _supportedExtensions.asStateFlow()
+
+    private val _detectedQrCode = MutableStateFlow<String?>(null)
+    val detectedQrCode: StateFlow<String?> = _detectedQrCode.asStateFlow()
+
+    private var imageAnalysis: ImageAnalysis? = null
+
     init {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
-            cameraProvider = cameraProviderFuture.get()
+            val provider = cameraProviderFuture.get()
+            cameraProvider = provider
+            
+            // Initialize ExtensionsManager
+            val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(context, provider)
+            extensionsManagerFuture.addListener({
+                extensionsManager = extensionsManagerFuture.get()
+                // Check initial availability for back camera
+                checkExtensionAvailability(CameraSelector.LENS_FACING_BACK)
+            }, ContextCompat.getMainExecutor(context))
+            
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    private fun checkExtensionAvailability(lensFacing: Int) {
+        val manager = extensionsManager ?: return
+        val cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+        
+        val available = mutableListOf<Int>()
+        val modes = listOf(
+            ExtensionMode.HDR,
+            ExtensionMode.NIGHT,
+            ExtensionMode.BOKEH,
+            ExtensionMode.FACE_RETOUCH,
+            ExtensionMode.AUTO
+        )
+        
+        for (mode in modes) {
+            if (manager.isExtensionAvailable(cameraSelector, mode)) {
+                available.add(mode)
+            }
+        }
+        _supportedExtensions.value = available
     }
 
     fun bindVideoPreview(
@@ -78,9 +120,24 @@ class CameraManager(private val context: Context) {
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
         targetFps: Int = 30,
-        windowSize: android.util.Size // Use full size instead of boolean
+        windowSize: android.util.Size, // Use full size instead of boolean
+        scanQrCodes: Boolean = false
     ) {
         val provider = cameraProvider ?: return
+
+        // Image Analysis Use Case
+        if (scanQrCodes) {
+            imageAnalysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(cameraExecutor, QrCodeAnalyzer { qrCode ->
+                        _detectedQrCode.value = qrCode
+                    })
+                }
+        } else {
+            imageAnalysis = null
+        }
 
         val quality = when (videoResolutionTier) {
             0 -> Quality.HD
@@ -143,11 +200,13 @@ class CameraManager(private val context: Context) {
 
         try {
             provider.unbindAll()
+            val useCases = mutableListOf<UseCase>(preview, videoCapture!!)
+            imageAnalysis?.let { useCases.add(it) }
+            
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                preview,
-                videoCapture
+                *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
         } catch (e: Exception) {
@@ -163,9 +222,28 @@ class CameraManager(private val context: Context) {
         photoResolutionTier: Int = 1,
         jpegQuality: Int = 95,
         captureMode: Int = ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
-        windowSize: android.util.Size // Use full size
+        extensionMode: Int = ExtensionMode.NONE,
+        windowSize: android.util.Size, // Use full size
+        scanQrCodes: Boolean = false
     ) {
         val provider = cameraProvider ?: return
+
+        // Image Analysis Use Case
+        if (scanQrCodes) {
+            imageAnalysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(cameraExecutor, QrCodeAnalyzer { qrCode ->
+                        _detectedQrCode.value = qrCode
+                    })
+                }
+        } else {
+            imageAnalysis = null
+        }
+        
+        // Update availability for the current lens
+        checkExtensionAvailability(lensFacing)
 
         _flashMode.value = flashMode
 
@@ -200,9 +278,20 @@ class CameraManager(private val context: Context) {
             .build()
         preview.setSurfaceProvider(previewView.surfaceProvider)
 
-        val cameraSelector = CameraSelector.Builder()
+        var cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
+            
+        // Apply Extension directly to the selector
+        if (extensionMode != ExtensionMode.NONE && extensionsManager != null) {
+            if (extensionsManager!!.isExtensionAvailable(cameraSelector, extensionMode)) {
+                try {
+                    cameraSelector = extensionsManager!!.getExtensionEnabledCameraSelector(cameraSelector, extensionMode)
+                } catch (e: Exception) {
+                    Log.e("CameraManager", "Failed to enable extension $extensionMode", e)
+                }
+            }
+        }
 
         imageCapture = ImageCapture.Builder()
             .setCaptureMode(captureMode)
@@ -213,11 +302,13 @@ class CameraManager(private val context: Context) {
 
         try {
             provider.unbindAll()
+            val useCases = mutableListOf<UseCase>(preview, imageCapture!!)
+            imageAnalysis?.let { useCases.add(it) }
+
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 cameraSelector,
-                preview,
-                imageCapture
+                *useCases.toTypedArray()
             )
             observeCameraState(lifecycleOwner)
         } catch (e: Exception) {
@@ -262,6 +353,10 @@ class CameraManager(private val context: Context) {
         val point = factory.createPoint(x, y)
         val action = FocusMeteringAction.Builder(point).build()
         camera?.cameraControl?.startFocusAndMetering(action)
+    }
+
+    fun clearDetectedQrCode() {
+        _detectedQrCode.value = null
     }
 
     fun takePhoto(onPhotoSaved: (Uri) -> Unit) {

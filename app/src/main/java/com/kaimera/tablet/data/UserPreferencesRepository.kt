@@ -25,6 +25,7 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_CIRCLE_RADIUS_PERCENT = intPreferencesKey("circle_radius_percent") // 0-100
         val KEY_CAPTURE_MODE = intPreferencesKey("capture_mode") // 0: Latency, 1: Quality
         val KEY_IS_DEBUG_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("is_debug_mode")
+        val KEY_SCAN_QR_CODES = androidx.datastore.preferences.core.booleanPreferencesKey("scan_qr_codes")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -59,6 +60,9 @@ class UserPreferencesRepository(private val context: Context) {
 
     val isDebugMode: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[KEY_IS_DEBUG_MODE] ?: false }
+
+    val scanQrCodes: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[KEY_SCAN_QR_CODES] ?: false }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -123,6 +127,12 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun setDebugMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[KEY_IS_DEBUG_MODE] = enabled
+        }
+    }
+
+    suspend fun setScanQrCodes(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_SCAN_QR_CODES] = enabled
         }
     }
 }

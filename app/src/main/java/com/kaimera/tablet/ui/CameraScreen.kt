@@ -20,6 +20,7 @@ import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,17 +36,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material.icons.Icons
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FlashAuto
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material.icons.filled.Pause
@@ -57,6 +64,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,6 +73,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -101,6 +110,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.core.util.Consumer
 import androidx.camera.video.VideoRecordEvent
+import androidx.camera.extensions.ExtensionMode
 import com.kaimera.tablet.camera.CameraManager
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -122,6 +132,7 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     val circleRadiusPercent by userPreferences.circleRadiusPercent.collectAsState(initial = 20)
     val captureMode by userPreferences.captureMode.collectAsState(initial = 1)
     val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
+    val scanQrCodes by userPreferences.scanQrCodes.collectAsState(initial = false)
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -152,10 +163,16 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
             circleRadiusPercent = circleRadiusPercent,
             captureMode = captureMode,
             isDebugMode = isDebugMode,
+            scanQrCodes = scanQrCodes,
             onFlashModeChange = { newMode -> 
                 scope.launch { 
                     userPreferences.setFlashMode(newMode)
                     cameraManager.setFlashMode(newMode)
+                }
+            },
+            onScanQrCodesChange = { enabled ->
+                scope.launch {
+                    userPreferences.setScanQrCodes(enabled)
                 }
             }
         )
@@ -188,13 +205,16 @@ fun CameraContent(
     circleRadiusPercent: Int,
     captureMode: Int,
     isDebugMode: Boolean,
-    onFlashModeChange: (Int) -> Unit
+    scanQrCodes: Boolean,
+    onFlashModeChange: (Int) -> Unit,
+    onScanQrCodesChange: (Boolean) -> Unit
 ) {
     // Camera Manager State
     val zoomRatio by cameraManager.zoomState.collectAsState()
     val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
     val isRecording by cameraManager.isRecording.collectAsState()
     val isPaused by cameraManager.isPaused.collectAsState()
+    val detectedQrCode by cameraManager.detectedQrCode.collectAsState()
     
     // View State (for dynamic rebinding)
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
@@ -221,7 +241,19 @@ fun CameraContent(
     val exposureIndex by cameraManager.exposureIndex.collectAsState()
     val exposureRange by cameraManager.exposureRange.collectAsState()
     val exposureStep by cameraManager.exposureStep.collectAsState()
+
     val actualResolution by cameraManager.actualResolution.collectAsState()
+
+    // Extensions State
+    val supportedExtensions by cameraManager.supportedExtensions.collectAsState()
+    var extensionMode by remember { mutableIntStateOf(ExtensionMode.NONE) }
+    
+    // Reset extension mode if it's no longer supported (e.g. lens switch)
+    LaunchedEffect(supportedExtensions) {
+        if (extensionMode != ExtensionMode.NONE && !supportedExtensions.contains(extensionMode)) {
+            extensionMode = ExtensionMode.NONE
+        }
+    }
 
 
     DisposableEffect(Unit) {
@@ -295,7 +327,7 @@ fun CameraContent(
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
 
-        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, maxWidthDp, maxHeightDp) {
+        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, maxWidthDp, maxHeightDp) {
             val view = previewView ?: return@LaunchedEffect
             val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
             if (cameraMode == 0) {
@@ -307,7 +339,9 @@ fun CameraContent(
                     photoResolutionTier = photoResolutionTier,
                     jpegQuality = jpegQuality,
                     captureMode = captureMode,
-                    windowSize = windowSize
+                    extensionMode = extensionMode,
+                    windowSize = windowSize,
+                    scanQrCodes = scanQrCodes
                 )
             } else {
                 cameraManager.bindVideoPreview(
@@ -316,7 +350,8 @@ fun CameraContent(
                     lensFacing, 
                     videoResolutionTier = videoResolutionTier,
                     targetFps = videoFps,
-                    windowSize = windowSize
+                    windowSize = windowSize,
+                    scanQrCodes = scanQrCodes
                 )
             }
         }
@@ -349,6 +384,45 @@ fun CameraContent(
             rotationAngle = rotationAngle,
             focusPoint = focusPoint
         )
+
+        // Detected QR Code Result Pill
+        detectedQrCode?.let { qrText ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 32.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(1.dp, Color.Cyan.copy(alpha = 0.5f)),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Filled.Link, contentDescription = null, tint = Color.Cyan, modifier = Modifier.size(20.dp))
+                        Text(
+                            text = qrText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 200.dp)
+                        )
+                        IconButton(
+                            onClick = { cameraManager.clearDetectedQrCode() },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Filled.Close, contentDescription = "Clear", tint = Color.LightGray, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
 
         // Overlay Controls - Updated Polished Layout
         Row(
@@ -420,6 +494,38 @@ fun CameraContent(
                                 },
                                 contentDescription = "Flash",
                                 tint = Color.White
+                            )
+                        }
+                        
+
+
+                        // Extension Toggle (Only if extensions are available)
+                        if (supportedExtensions.isNotEmpty() && cameraMode == 0) {
+                             IconButton(onClick = { 
+                                // Cycle: None -> Ext 1 -> Ext 2 -> ... -> None
+                                val currentIndex = supportedExtensions.indexOf(extensionMode)
+                                extensionMode = if (currentIndex < supportedExtensions.size - 1) {
+                                    supportedExtensions[currentIndex + 1]
+                                } else {
+                                    ExtensionMode.NONE
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.AutoAwesome, 
+                                    contentDescription = "Extensions", 
+                                    tint = if (extensionMode == ExtensionMode.NONE) Color.White else Color.Yellow
+                                )
+                            }
+                        }
+
+                        // QR Code Scanner Toggle
+                         IconButton(onClick = { 
+                            onScanQrCodesChange(!scanQrCodes)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCodeScanner, 
+                                contentDescription = "QR Scanner", 
+                                tint = if (scanQrCodes) Color.Cyan else Color.White
                             )
                         }
                         
@@ -611,7 +717,9 @@ fun CameraContent(
                      val ratio = if (actualResolution.height != 0) actualResolution.width.toFloat() / actualResolution.height.toFloat() else 0f
                      Text("Ratio: %.2f".format(ratio), color = Color.White)
                      Text("isPortrait: $isPortraitWindow", color = Color.White)
+
                      Text("Lens: $lensFacing", color = Color.White)
+                     Text("Ext: $extensionMode (Sup: ${supportedExtensions.size})", color = Color.White)
                  }
              }
         }

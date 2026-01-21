@@ -52,13 +52,17 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **ISO/Shutter Priority**: (If supported by hardware/Camera2Interop) Monitor and display current values.
 
 ### 3.2 Advanced Modes
-- **QR Code Scanner**: Dedicated mode or auto-detection overlay using ML Kit or ZXing.
+- **QR Code Scanner (Completed)**: Dedicated toggle in sidebar with real-time ML Kit detection.
 - **Timelapse**: Record video with frame intervals.
-- **Burst Mode**: Hold shutter for rapid capture.
+- **Burst Mode (Completed)**: Gestures implemented for rapid capture.
 
 ### 3.3 Video Enhancements (Completed)
 - **Frame Rate**: Configurable 30/60 FPS.
 - **Resolution**: Toggle between HD, FHD, 4K.
+
+### 3.4 Vendor Extensions (Completed)
+- **Feature**: Initial support for Vendor Extensions (HDR, Night, Bokeh, Face Retouch, Auto).
+- **Implementation**: `ExtensionsManager` integration with dynamic availability check.
 
 ## Phase 4: Intelligence & Polishing
 - **AI Scene Detection**: Highlight text, faces, or objects.
