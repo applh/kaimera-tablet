@@ -3,6 +3,12 @@ package com.kaimera.tablet.features.browser
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
+import android.webkit.URLUtil
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -147,6 +153,24 @@ fun BrowserScreen(
                                 viewModel.setProgress(newProgress)
                             }
                         }
+                        setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+                            val request = android.app.DownloadManager.Request(Uri.parse(url)).apply {
+                                setMimeType(mimetype)
+                                val fileName = android.webkit.URLUtil.guessFileName(url, contentDisposition, mimetype)
+                                setTitle(fileName)
+                                setDescription("Downloading file...")
+                                setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                                setAllowedOverMetered(true)
+                                setAllowedOverRoaming(true)
+                            }
+                            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                            dm.enqueue(request)
+                            
+                            // Show a simple toast or snackbar
+                            android.widget.Toast.makeText(context, "Download started...", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                        
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         loadUrl(currentUrl)

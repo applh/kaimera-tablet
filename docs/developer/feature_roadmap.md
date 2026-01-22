@@ -124,9 +124,9 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **MVP (Completed)**: Address bar, WebView integration, basic navigation controls (Back/Forward/Refresh).
 - **Premium Polish (Completed)**: Progress bar, Home button, Persistent URL storage, and dedicated ViewModel.
 
-### 5.2 Downloads Applet (v0.0.29 - MVP Stub)
+### 5.2 Downloads Applet (v0.0.35 - MVP Completed)
 - **MVP (Completed)**: List of downloaded files with "Open" and "Delete" actions.
-- **Visuals**: Storage usage indicator and file type icons.
+- **Visuals (Completed)**: Storage usage indicator and file type icons.
 
 ### 5.3 Notes Applet (v0.0.29 - MVP Stub)
 - **MVP (Completed)**: Simple text-based notes with auto-save and local search.
