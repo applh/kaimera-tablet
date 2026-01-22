@@ -35,6 +35,7 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
         val KEY_AI_SCENE_DETECTION = androidx.datastore.preferences.core.booleanPreferencesKey("ai_scene_detection")
         val KEY_TIMELAPSE_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("timelapse_mode")
         val KEY_TIMELAPSE_INTERVAL = androidx.datastore.preferences.core.longPreferencesKey("timelapse_interval")
+        val KEY_BROWSER_LAST_URL = androidx.datastore.preferences.core.stringPreferencesKey("browser_last_url")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -87,6 +88,9 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
 
     val timelapseInterval: Flow<Long> = context.dataStore.data
         .map { preferences -> preferences[KEY_TIMELAPSE_INTERVAL] ?: 2000L } // Default 2s
+
+    val browserLastUrl: Flow<String> = context.dataStore.data
+        .map { preferences -> preferences[KEY_BROWSER_LAST_URL] ?: "https://www.google.com" }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -187,6 +191,12 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
     suspend fun setTimelapseInterval(intervalMs: Long) {
         context.dataStore.edit { preferences ->
             preferences[KEY_TIMELAPSE_INTERVAL] = intervalMs
+        }
+    }
+
+    suspend fun setBrowserLastUrl(url: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_BROWSER_LAST_URL] = url
         }
     }
 }

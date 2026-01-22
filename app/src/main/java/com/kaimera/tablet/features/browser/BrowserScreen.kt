@@ -1,68 +1,119 @@
 package com.kaimera.tablet.features.browser
 
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrowserScreen(onBack: () -> Unit) {
-    var url by remember { mutableStateOf("https://www.google.com") }
-    var textFieldValue by remember { mutableStateOf(url) }
+fun BrowserScreen(
+    onBack: () -> Unit,
+    viewModel: BrowserViewModel = hiltViewModel()
+) {
+    val currentUrl by viewModel.url.collectAsStateWithLifecycle()
+    val loadProgress by viewModel.loadProgress.collectAsStateWithLifecycle()
+    val canGoBack by viewModel.canGoBack.collectAsStateWithLifecycle()
+    val canGoForward by viewModel.canGoForward.collectAsStateWithLifecycle()
+
+    var textFieldValue by remember { mutableStateOf(currentUrl) }
     val focusManager = LocalFocusManager.current
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    // Sync textFieldValue when currentUrl changes from external source (like Home button or init)
+    LaunchedEffect(currentUrl) {
+        if (textFieldValue != currentUrl) {
+            textFieldValue = currentUrl
+        }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    TextField(
-                        value = textFieldValue,
-                        onValueChange = { textFieldValue = it },
-                        modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
-                        placeholder = { Text("Search or enter URL") },
-                        singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                        keyboardActions = KeyboardActions(
-                            onGo = {
-                                var targetUrl = textFieldValue
-                                if (!targetUrl.startsWith("http")) {
-                                    targetUrl = "https://www.google.com/search?q=$targetUrl"
+            Column {
+                TopAppBar(
+                    title = {
+                        TextField(
+                            value = textFieldValue,
+                            onValueChange = { textFieldValue = it },
+                            modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                            placeholder = { Text("Search or enter URL") },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Language, contentDescription = null) },
+                            trailingIcon = {
+                                if (textFieldValue.isNotEmpty()) {
+                                    IconButton(onClick = { textFieldValue = "" }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear")
+                                    }
                                 }
-                                url = targetUrl
-                                textFieldValue = targetUrl
-                                focusManager.clearFocus()
-                            }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                            keyboardActions = KeyboardActions(
+                                onGo = {
+                                    viewModel.updateUrl(textFieldValue)
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = MaterialTheme.shapes.medium
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Exit Browser")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { webViewRef?.reload() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reload")
+                        }
+                    }
+                )
+                if (loadProgress < 100) {
+                    LinearProgressIndicator(
+                        progress = { loadProgress / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
+                }
+            }
+        },
+        bottomBar = {
+            BottomAppBar(
+                actions = {
+                    IconButton(
+                        onClick = { webViewRef?.goBack() },
+                        enabled = canGoBack
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    IconButton(onClick = { url = textFieldValue }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Reload")
+                    IconButton(
+                        onClick = { webViewRef?.goForward() },
+                        enabled = canGoForward
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward")
+                    }
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.updateUrl("https://www.google.com") }) {
+                        Icon(Icons.Default.Home, contentDescription = "Home")
                     }
                 }
             )
@@ -76,13 +127,37 @@ fun BrowserScreen(onBack: () -> Unit) {
             AndroidView(
                 factory = { context ->
                     WebView(context).apply {
-                        webViewClient = WebViewClient()
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                super.onPageFinished(view, url)
+                                url?.let { 
+                                    // Update nav state
+                                    viewModel.updateNavState(canGoBack(), canGoForward())
+                                    // Sync URL if it changed via links
+                                    if (it != currentUrl) {
+                                        textFieldValue = it
+                                        // Optionally could update VM if we want link clicks to be the "last url"
+                                        // viewModel.updateUrl(it) 
+                                    }
+                                }
+                            }
+                        }
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                viewModel.setProgress(newProgress)
+                            }
+                        }
                         settings.javaScriptEnabled = true
-                        loadUrl(url)
+                        settings.domStorageEnabled = true
+                        loadUrl(currentUrl)
+                        webViewRef = this
                     }
                 },
                 update = { webView ->
-                    webView.loadUrl(url)
+                    // Only load if the URL is different to prevent loops
+                    if (webView.url != currentUrl) {
+                        webView.loadUrl(currentUrl)
+                    }
                 },
                 modifier = Modifier.fillMaxSize()
             )
