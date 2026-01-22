@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.unit.dp
@@ -76,11 +77,15 @@ fun SettingsScreen(
             nodes = treeNodes,
             selectedNodeId = selectedNodeId,
             onNodeSelected = { selectedNodeId = it.id },
-            modifier = Modifier.width(220.dp)
+            modifier = Modifier
+                .width(220.dp)
+                .statusBarsPadding()
         )
 
         Surface(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .statusBarsPadding(),
             color = MaterialTheme.colorScheme.background
         ) {
             Column(
