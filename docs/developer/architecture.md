@@ -11,6 +11,8 @@ The Kaimera Tablet application follows a modern, modular **Model-View-ViewModel 
 - **Key Components**:
   - `MainActivity.kt`: The single Activity entry point hosting the Navigation graph.
   - `CameraScreen.kt`: Composable handling the Camera UI layout.
+  - `CameraScreen.kt`: Composable handling the Camera UI layout.
+  - `CameraXViewfinder`: Native Compose viewfinder (replaced legacy PreviewView).
   - `CameraOverlays.kt`: Stateless composables for drawing visual aids (Grid, Level).
   - `LauncherScreen.kt`: The main dashboard.
 
@@ -58,10 +60,10 @@ The `CameraScreen` delegates all complex camera operations to `CameraManager`. T
 | | Activity Compose | 1.9.0 | Activity integration |
 | | Navigation Compose | 2.7.7 | Navigation graph |
 | | Icons Extended | 1.6.8 | Full material icon set |
-| **Camera** | **CameraX Core** | 1.3.4 | Core camera logic |
-| | CameraX Video | 1.3.4 | Video capture support |
-| | CameraX View | 1.3.4 | PreviewView UI component |
-| | CameraX Extensions | 1.3.4 | Vendor extensions (HDR, Night) |
+| **Camera** | **CameraX Core** | 1.5.2 | Core camera logic |
+| | CameraX Video | 1.5.2 | Video capture & Recorder |
+| | CameraX Compose | 1.5.2 | Native Compose Viewfinder |
+| | CameraX Extensions | 1.5.2 | Vendor extensions (HDR, Night) |
 | **Image/Video** | **Coil** | 2.6.0 | Image loading (AsyncImage) |
 | | Coil Video | 2.6.0 | Video thumbnail loading |
 | **Storage** | **DataStore** | 1.0.0 | Type-safe preferences storage |

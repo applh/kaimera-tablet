@@ -3,7 +3,7 @@
 ## Project Identity
 - **Name**: Kaimera Tablet
 - **Target Device**: Xiaomi Pad 2 Pro
-- **Tech Stack**: Kotlin, Jetpack Compose, Android SDK 34 (UpsideDownCake)
+- **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, Android SDK 34 (UpsideDownCake)
 
 ## Architecture
 - **Single Activity**: `MainActivity` hosts the `NavHost`.

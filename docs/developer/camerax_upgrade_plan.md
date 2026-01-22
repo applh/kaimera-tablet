@@ -7,10 +7,11 @@ This document outlines the strategy for leveraging modern features introduced in
 *   **Status**: ✅ Updated to `1.5.2` in `build.gradle.kts`.
 *   **Action**: Verify `./gradlew assembleDebug` passes.
 
-## 2. Adoption of `camera-compose`
+## 2. Adoption of `camera-compose` (Completed)
 
 CameraX 1.5.0+ stabilizes the `camera-compose` artifact, allowing us to remove the legacy `AndroidView` wrapping `PreviewView`.
 
+*   **Status**: ✅ Migrated to `CameraXViewfinder` in v0.0.25.
 *   **Goal**: Pure Compose UI without legacy View system bridging per [Android 15 guidance](https://developer.android.com/media/camera/camerax/compose).
 *   **Steps**:
     1.  Add `implementation("androidx.camera:camera-compose:1.5.2")`.
@@ -18,28 +19,30 @@ CameraX 1.5.0+ stabilizes the `camera-compose` artifact, allowing us to remove t
     3.  Connect the `SurfaceProvider` from `Viewfinder` to the `Preview` use case.
     4.  Verify rotation and aspect ratio handling (often improved in native Compose).
 
-## 3. Ultra HDR & 10-bit Capture
+## 6. Phase C: Ultra HDR (Completed)
 
-Android 14/15 introduced Ultra HDR (JPEG_R), which CameraX 1.4+ supports natively.
-
-*   **Goal**: Capture "Professional" quality images that shine on HDR displays (like Pad 2 Pro).
+*   **Status**: ✅ Implemented 10-bit HDR checks and configuration in `CameraManager`.
+*   **Goal**: Capture "Professional" quality images/video in 10-bit HDR (HLG10/JPEG_R).
 *   **Steps**:
-    1.  Check support: `ImageCapture.Builder.setDynamicRange(DynamicRange.HDR_UNSPECIFIED_10_BIT)`.
-    2.  Query `CameraInfo.querySession10BitDynamicRangeAvailability()`.
+    1.  Check support: `querySupportedDynamicRanges()`.
+    2.  Configure `ImageCapture` and `VideoCapture` with `DynamicRange.HDR_UNSPECIFIED_10_BIT`.
     3.  Fallback to SDR (8-bit) if unsupported.
     4.  Update file output formats if necessary (usually standard JPG/JPEG_R).
 
-## 4. Advanced Video Features (Slow Motion / High FPS)
+## 4. Advanced Video Features (Completed)
 
 CameraX 1.5.0 formalized High Dynamic Range and High Frame Rate video.
 
+*   **Status**: ✅ Implemented native safe-check for High FPS support.
 *   **Goal**: Native 60fps/120fps recording without fragile workarounds.
 *   **Steps**:
-    1.  Use `QualitySelector.getCommonQualities(CameraInfo)` combined with `DynamicRange` checks.
-    2.  Configure `Recorder` with a specific `FrameRate` range if hardware supports it.
+    1.  Resolve `Camera2CameraInfo` from `CameraInfo`.
+    2.  Check `CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES`.
+    3.  Only apply `CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE` if the device explicitly confirms support.
 
-## 5. Stabilization
+## 5. Stabilization (Completed)
 
+*   **Status**: ✅ Enabled Preview and Video stabilization in v0.0.25+.
 *   **Goal**: Reduce shakiness in handheld tablet video.
 *   **Steps**:
     1.  Enable `Preview.Builder.setPreviewStabilizationEnabled(true)`.

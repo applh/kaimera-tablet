@@ -57,7 +57,8 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Burst Mode (Completed)**: Gestures implemented for rapid capture.
 
 ### 3.3 Video Enhancements (Completed)
-- **Frame Rate**: Configurable 30/60 FPS.
+- **Frame Rate (Completed)**: Configurable 30/60 FPS (Native CameraX 1.5 check).
+- **Stabilization (Completed)**: Preview and Video stabilization enabled.
 - **Resolution**: Toggle between HD, FHD, 4K.
 
 ### 3.4 Vendor Extensions (Completed)

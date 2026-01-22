@@ -282,6 +282,7 @@ fun CameraContent(
     
     // View State (for dynamic rebinding)
     val surfaceRequest by cameraManager.surfaceRequest.collectAsState()
+    val isCameraInitialized by cameraManager.isInitialized.collectAsState()
     
     
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
@@ -398,35 +399,37 @@ fun CameraContent(
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
 
-        LaunchedEffect(lensFacing, cameraMode, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, aiSceneDetection, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
-            val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
-            if (cameraMode == 0) {
-                cameraManager.bindPhotoPreview(
-                    lifecycleOwner, 
-                    lensFacing, 
-                    flashMode = flashModePref,
-                    photoResolutionTier = photoResolutionTier,
-                    jpegQuality = jpegQuality,
-                    captureMode = captureMode,
-                    extensionMode = extensionMode,
-                    windowSize = windowSize,
-                    scanQrCodes = scanQrCodes,
-                    aiSceneDetection = aiSceneDetection,
-                    whiteBalanceMode = awbMode,
-                    torchEnabled = torchEnabled
-                )
-            } else {
-                cameraManager.bindVideoPreview(
-                    lifecycleOwner, 
-                    lensFacing, 
-                    videoResolutionTier = videoResolutionTier,
-                    targetFps = videoFps,
-                    windowSize = windowSize,
-                    scanQrCodes = scanQrCodes,
-                    aiSceneDetection = aiSceneDetection,
-                    whiteBalanceMode = awbMode,
-                    torchEnabled = torchEnabled
-                )
+        LaunchedEffect(isCameraInitialized, lensFacing, cameraMode, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, aiSceneDetection, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
+            if (isCameraInitialized && maxWidthDp.value > 0 && maxHeightDp.value > 0) {
+                val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
+                if (cameraMode == 0) {
+                    cameraManager.bindPhotoPreview(
+                        lifecycleOwner, 
+                        lensFacing, 
+                        flashMode = flashModePref,
+                        photoResolutionTier = photoResolutionTier,
+                        jpegQuality = jpegQuality,
+                        captureMode = captureMode,
+                        extensionMode = extensionMode,
+                        windowSize = windowSize,
+                        scanQrCodes = scanQrCodes,
+                        aiSceneDetection = aiSceneDetection,
+                        whiteBalanceMode = awbMode,
+                        torchEnabled = torchEnabled
+                    )
+                } else {
+                    cameraManager.bindVideoPreview(
+                        lifecycleOwner, 
+                        lensFacing, 
+                        videoResolutionTier = videoResolutionTier,
+                        targetFps = videoFps,
+                        windowSize = windowSize,
+                        scanQrCodes = scanQrCodes,
+                        aiSceneDetection = aiSceneDetection,
+                        whiteBalanceMode = awbMode,
+                        torchEnabled = torchEnabled
+                    )
+                }
             }
         }
 

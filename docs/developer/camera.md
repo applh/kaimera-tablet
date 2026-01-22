@@ -14,7 +14,8 @@ The implementation follows a modular MVVM-like pattern:
 ## Implemented CameraX Features
 
 ### 1. Camera Preview
-- **Implementation**: `Preview` UseCase bound to `PreviewView`.
+- **Implementation**: `Preview` UseCase bound to `CameraXViewfinder` (Compose).
+- **Stabilization**: Preview Stabilization enabled.
 - **Dynamic Rebinding**: Preview is automatically re-bound when settings (resolution, lens) change.
 - **Auto-Focus**: Tap-to-focus implemented using `FocusMeteringAction`.
 
@@ -30,7 +31,9 @@ The implementation follows a modular MVVM-like pattern:
 - **Features**: 
     - Audio recording support.
     - Real-time duration counter.
-    - **Configurable Frame Rate**: Supports 30 FPS and 60 FPS (if supported by hardware) via `Camera2Interop` AE Target FPS Range.
+    - **Configurable Frame Rate**: Safe 30/60 FPS using CameraX 1.5 native capabilities check.
+    - **Stabilization**: Video Stabilization enabled.
+    - **Dynamic Range**: 10-bit HDR (HLG10/JPEG_R) if supported.
     - Pause/Resume support.
     - **Timelapse Recording**:
         - custom "Pulse Recording" implementation using rapid pause/resume cycles.
@@ -65,11 +68,12 @@ The implementation follows a modular MVVM-like pattern:
 
 ## Dependencies
 ```kotlin
-implementation("androidx.camera:camera-core:1.4.0-alpha03")
-implementation("androidx.camera:camera-camera2:1.4.0-alpha03")
-implementation("androidx.camera:camera-lifecycle:1.4.0-alpha03")
-implementation("androidx.camera:camera-video:1.4.0-alpha03")
-implementation("androidx.camera:camera-view:1.4.0-alpha03")
+implementation("androidx.camera:camera-core:1.5.2")
+implementation("androidx.camera:camera-camera2:1.5.2")
+implementation("androidx.camera:camera-lifecycle:1.5.2")
+implementation("androidx.camera:camera-video:1.5.2")
+implementation("androidx.camera:camera-compose:1.5.2")
+implementation("androidx.camera:camera-extensions:1.5.2")
 ```
 
 ## Future Roadmap

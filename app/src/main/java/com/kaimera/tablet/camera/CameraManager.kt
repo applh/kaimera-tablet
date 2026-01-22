@@ -45,6 +45,9 @@ class CameraManager(private val context: Context) {
     private val _maxZoomState = MutableStateFlow(1f)
     val maxZoomState: StateFlow<Float> = _maxZoomState.asStateFlow()
 
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
@@ -98,6 +101,7 @@ class CameraManager(private val context: Context) {
         cameraProviderFuture.addListener({
             val provider = cameraProviderFuture.get()
             cameraProvider = provider
+            _isInitialized.value = true
             
             // Initialize ExtensionsManager
             val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(context, provider)

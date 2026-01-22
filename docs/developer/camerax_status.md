@@ -23,7 +23,6 @@
 - **Configuration**:
     - `CAPTURE_MODE_MINIMIZE_LATENCY` for speed.
   - [x] Timelapse Mode (using Pulse Recording - v0.0.24) <!-- id: 50 -->
-- [ ] Slow Motion (High Frame Rate) <!-- id: 51 -->
     - `FlashMode` integration (Auto/On/Off).
     - `JpegQuality` integration (1-100).
 - **Output**: `MediaStore` (Pictures/Kaimera).
@@ -38,6 +37,8 @@
 - **Features**:
     - Build-in duration tracking via `VideoRecordEvent.Status`.
     - MP4 Output.
+    - **High FPS**: ✅ Safe 60fps/120fps support (device dependent) with native validation.
+    - **Stabilization**: ✅ Video Stabilization enabled.
 
 ### Camera Control & State
 - **Zoom**: ✅ `CameraControl.setZoomRatio`. `zoomState` and `maxZoomState` exposed as flows.
