@@ -29,6 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import com.kaimera.tablet.core.ui.components.TreeNode
+import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +49,19 @@ fun BrowserScreen(
     var textFieldValue by remember { mutableStateOf(currentUrl) }
     val focusManager = LocalFocusManager.current
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    val treeNodes = remember {
+        listOf(
+            TreeNode("history", "History", Icons.Default.History),
+            TreeNode("bookmarks", "Bookmarks", Icons.Default.Bookmark),
+            TreeNode("downloads", "Downloads", Icons.Default.Download)
+        )
+    }
+    var selectedNodeId by remember { mutableStateOf<String?>(null) }
+
 
     // Context Menu State
     var showContextMenu by remember { mutableStateOf(false) }
@@ -57,7 +74,19 @@ fun BrowserScreen(
         }
     }
 
-    Scaffold(
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Browser",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+        onNodeSelected = { 
+            selectedNodeId = it.id 
+            // Handle navigation or filter if needed
+        }
+    ) {
+        Scaffold(
+
         topBar = {
             Column {
                 TopAppBar(
@@ -91,10 +120,11 @@ fun BrowserScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Exit Browser")
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
                     },
+
                     actions = {
                         IconButton(onClick = { webViewRef?.reload() }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Reload")
@@ -254,8 +284,10 @@ fun BrowserScreen(
                 )
             }
         }
+        }
     }
 }
+
 
 private fun isVideoUrl(url: String): Boolean {
     val videoExtensions = listOf(".mp4", ".mkv", ".webm", ".avi", ".mov")

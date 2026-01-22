@@ -128,13 +128,22 @@ import androidx.camera.extensions.ExtensionMode
 // CameraManager is now in the same package, so no need for import
 
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import com.kaimera.tablet.core.ui.components.TreeNode
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
+    onBack: () -> Unit = {},
     onNavigateToGallery: () -> Unit = {},
     viewModel: CameraViewModel = hiltViewModel()
 ) {
+
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
@@ -173,7 +182,9 @@ fun CameraScreen(
         CameraContent(
             context = context,
             lifecycleOwner = lifecycleOwner,
+            onBack = onBack,
             onNavigateToGallery = onNavigateToGallery,
+
             cameraManager = cameraManager,
             gridRows = gridRows,
             gridCols = gridCols,
@@ -247,7 +258,9 @@ fun CameraScreen(
 fun CameraContent(
     context: Context,
     lifecycleOwner: LifecycleOwner,
+    onBack: () -> Unit,
     onNavigateToGallery: () -> Unit,
+
     cameraManager: CameraManager,
     gridRows: Int,
     gridCols: Int,
@@ -274,7 +287,9 @@ fun CameraContent(
     onAwbModeChange: (Int) -> Unit,
     onTorchChange: (Boolean) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     // Camera Manager State
+
     val zoomRatio by cameraManager.zoomState.collectAsState()
     val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
     val isRecording by cameraManager.isRecording.collectAsState()
@@ -326,6 +341,16 @@ fun CameraContent(
         }
     }
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+    val treeNodes = remember {
+        listOf(
+            TreeNode("photo", "Photo Mode", Icons.Default.PhotoCamera),
+            TreeNode("video", "Video Mode", Icons.Default.Videocam),
+            TreeNode("settings", "Settings", Icons.Default.Settings)
+        )
+    }
+    var selectedNodeId by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -398,8 +423,24 @@ fun CameraContent(
         }
     }
 
-    // Camera Re-binding logic
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Camera",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+        onNodeSelected = { 
+            selectedNodeId = it.id
+            when(it.id) {
+                "photo" -> cameraMode = 0
+                "video" -> cameraMode = 1
+                "settings" -> { /* Open settings overlay if exist */ }
+            }
+        }
+    ) {
+        // Camera Re-binding logic
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+
         val maxWidthDp = maxWidth
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
@@ -537,6 +578,8 @@ fun CameraContent(
         }
 
         // ADAPTIVE OVERLAY CONTROLS
+
+
         // Determine Layout Strategy
         val isLandscapeLayout = !isPortraitWindow
 
@@ -619,10 +662,12 @@ fun CameraContent(
                     },
                     onPauseRecording = { cameraManager.pauseVideoRecording() },
                     onResumeRecording = { cameraManager.resumeVideoRecording() },
-                    onNavigateToGallery = onNavigateToGallery
+                    onNavigateToGallery = onNavigateToGallery,
+                    onMenuClick = { scope.launch { drawerState.open() } }
                 )
             }
         } else {
+
             // BOTTOM BAR LAYOUT (Portrait / Split Screen)
             Column(
                 modifier = Modifier
@@ -701,10 +746,12 @@ fun CameraContent(
                     },
                     onPauseRecording = { cameraManager.pauseVideoRecording() },
                     onResumeRecording = { cameraManager.resumeVideoRecording() },
-                    onNavigateToGallery = onNavigateToGallery
+                    onNavigateToGallery = onNavigateToGallery,
+                    onMenuClick = { scope.launch { drawerState.open() } }
                 )
             }
         }
+
             
         // Timer Countdown Display (Centered)
         if (isTimerRunning) {
@@ -746,8 +793,10 @@ fun CameraContent(
                  }
              }
         }
+        }
     }
 }
+
 
 
 private fun getLastImageUri(context: Context): android.net.Uri? {

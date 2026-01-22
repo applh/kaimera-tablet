@@ -14,6 +14,13 @@ When using this skill, adopt the persona of a *Senior Fullstack Engineer*.
 - **Proactive**: Anticipate edge cases (network failure, permission denial, rotation) before they happen.
 - **Mentorship**: Explain *why* a solution is chosen, referencing patterns like MVVM, Repository, or SOLID.
 
+## Specialized Skills
+For deep expertise in specific areas, refer to:
+- [UXDesigner Skill](file:///Users/lh/Downloads/antig/kaimera-tablet/.agent/skills/UXDesigner/SKILL.md): Cyberpunk design system, HUD/UI standards.
+
+- [BackendDevelopment Skill](file:///Users/lh/Downloads/antig/kaimera-tablet/.agent/skills/BackendDevelopment/SKILL.md): Persistence (Room/DataStore), Hilt DI, Clean Architecture.
+
+
 ## Environment Setup
 
 - **JDK Version**: 17 (Strict requirement)
@@ -89,7 +96,8 @@ Focus on creating flexible, screen-agnostic user interfaces that adapt to variou
 
 2.  **Flexible Layouts**:
     - Prefer `FlowRow`, `LazyVerticalGrid`, or responsive `Row/Column` combinations over static layouts.
-    - Implement "Sliding Panes" or "Master-Detail" flows for larger screens using `BoxWithConstraints` or the hierarchical **`TreePanel`** component (located in `core.ui.components`) to toggle between list/detail views and side-by-side views.
+    - Implement "Sliding Panes" or "Master-Detail" flows for larger screens using the hierarchical **`NavDrawerTreePanel`** component (located in `core.ui.components`) as the standard for all applets.
+
 
 3.  **Density Independence**:
     - Use scalable units (`sp` for text).

@@ -43,16 +43,30 @@ fun CockpitTopBar(
     onAiSceneDetectionChange: (Boolean) -> Unit,
     onExtensionModeChange: (Int) -> Unit,
     onTimelapseModeChange: (Boolean) -> Unit,
-    onScanQrCodesChange: (Boolean) -> Unit
+    onScanQrCodesChange: (Boolean) -> Unit,
+    onMenuClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp) // Reduced from 56
+            .height(48.dp)
             .background(Color.Black.copy(alpha = 0.4f)),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
     ) {
+        // 0. Menu
+        IconButton(onClick = onMenuClick) {
+            Icon(Icons.Default.Menu, "Menu", tint = Color.White)
+        }
+        
+        Spacer(Modifier.weight(1f))
+
+        Row(
+            modifier = Modifier.fillMaxHeight(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
         // Flash
         IconButton(onClick = { onFlashModeChange((flashModePref + 1) % 3) }) {
             Icon(
@@ -99,9 +113,11 @@ fun CockpitTopBar(
         }
 
         // QR
-        IconButton(onClick = { onScanQrCodesChange(!scanQrCodes) }) {
-            Icon(Icons.Filled.QrCodeScanner, "QR", tint = if (scanQrCodes) Color.Cyan else Color.White)
+            IconButton(onClick = { onScanQrCodesChange(!scanQrCodes) }) {
+                Icon(Icons.Filled.QrCodeScanner, "QR", tint = if (scanQrCodes) Color.Cyan else Color.White)
+            }
         }
+        Spacer(Modifier.width(8.dp))
     }
 }
 

@@ -2,6 +2,9 @@ package com.kaimera.tablet.features.downloads
 
 import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import kotlinx.coroutines.launch
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -43,7 +46,11 @@ fun DownloadsScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     var showAddDialog by remember { mutableStateOf(false) }
+
 
     if (showAddDialog) {
         var urlText by remember { mutableStateOf("") }
@@ -83,22 +90,46 @@ fun DownloadsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Downloads") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                }
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Downloads",
+        onHomeClick = onBack,
+        nodes = remember {
+
+            listOf(
+                TreeNode("all", "All Files", Icons.Default.Folder),
+                TreeNode("recent", "Recent", Icons.Default.History),
+                TreeNode("images", "Images", Icons.Default.Image),
+                TreeNode("videos", "Videos", Icons.Default.VideoLibrary),
+                TreeNode("documents", "Documents", Icons.Default.Description),
+                TreeNode("others", "Others", Icons.Default.InsertDriveFile)
             )
         },
+        selectedNodeId = selectedCategory.id,
+        onNodeSelected = { node ->
+            val category = DownloadsViewModel.DownloadsCategory.values()
+                .find { it.id == node.id } ?: DownloadsViewModel.DownloadsCategory.ALL
+            viewModel.onCategorySelected(category)
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Downloads") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+
+                    actions = {
+                        IconButton(onClick = { viewModel.refresh() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                    }
+                )
+            },
+
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Download")
@@ -137,38 +168,12 @@ fun DownloadsScreen(
             }
         }
     ) { padding ->
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val treeNodes = remember {
-                listOf(
-                    TreeNode("all", "All Files", Icons.Default.Folder),
-                    TreeNode("recent", "Recent", Icons.Default.History),
-                    TreeNode("images", "Images", Icons.Default.Image),
-                    TreeNode("videos", "Videos", Icons.Default.VideoLibrary),
-                    TreeNode("documents", "Documents", Icons.Default.Description),
-                    TreeNode("others", "Others", Icons.Default.InsertDriveFile)
-                )
-            }
 
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedCategory.id,
-                onNodeSelected = { node ->
-                    val category = DownloadsViewModel.DownloadsCategory.values()
-                        .find { it.id == node.id } ?: DownloadsViewModel.DownloadsCategory.ALL
-                    viewModel.onCategorySelected(category)
-                },
-                modifier = Modifier.width(240.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-            ) {
                 if (files.isEmpty() && !isRefreshing) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -212,6 +217,7 @@ fun DownloadsScreen(
         }
     }
 }
+
 
 @Composable
 fun DownloadItem(

@@ -22,7 +22,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import kotlinx.coroutines.launch
+
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -130,17 +134,31 @@ fun MapsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Maps") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Maps",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+
+        onNodeSelected = { viewModel.selectNode(it.id) }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Maps") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
                     }
-                }
-            )
-        },
+
+                )
+            },
+
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -165,19 +183,12 @@ fun MapsScreen(
             }
         }
     ) { padding ->
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedNodeId,
-                onNodeSelected = { viewModel.selectNode(it.id) },
-                modifier = Modifier.width(260.dp)
-            )
 
-            Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { ctx ->
                         MapView(ctx).apply {
@@ -296,6 +307,7 @@ fun MapsScreen(
         }
     }
 }
+
 
 private fun syncMapState(mapView: MapView, viewModel: MapsViewModel) {
     val center = mapView.mapCenter as GeoPoint

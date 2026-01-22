@@ -37,8 +37,13 @@ import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
+
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Language
@@ -73,26 +78,24 @@ fun SettingsScreen(
     }
     var selectedNodeId by remember { mutableStateOf("home") }
 
-    com.kaimera.tablet.core.ui.components.AppletScaffold(
-        title = "Settings",
-        onBack = onBack
-    ) { paddingValues ->
-        Row(modifier = Modifier.fillMaxSize()) {
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedNodeId,
-                onNodeSelected = { selectedNodeId = it.id },
-                modifier = Modifier
-                    .width(220.dp)
-                    // .statusBarsPadding() // Handled by AppletScaffold
-            )
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-            Surface(
-                modifier = Modifier
-                    .weight(1f),
-                    // .statusBarsPadding(), // Handled by AppletScaffold
-                color = MaterialTheme.colorScheme.background
-            ) {
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Settings",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+
+        onNodeSelected = { selectedNodeId = it.id }
+    ) {
+        com.kaimera.tablet.core.ui.components.AppletScaffold(
+            title = "Settings",
+            onMenuClick = { scope.launch { drawerState.open() } }
+        ) { paddingValues ->
+
+            Box(modifier = Modifier.fillMaxSize()) {
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

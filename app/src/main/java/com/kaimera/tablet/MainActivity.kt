@@ -66,11 +66,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("camera") {
                             CameraScreen(
+                                onBack = { navController.popBackStack() },
                                 onNavigateToGallery = {
                                     navController.navigate("files")
                                 }
                             )
                         }
+
                         composable("settings") {
                             SettingsScreen(
                                 onBack = { navController.popBackStack() },

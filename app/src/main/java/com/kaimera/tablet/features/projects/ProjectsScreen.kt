@@ -19,8 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.TreeNode
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import kotlinx.coroutines.launch
 import com.kaimera.tablet.data.local.entities.Task
+
 import com.kaimera.tablet.features.projects.components.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,7 +41,11 @@ fun ProjectsScreen(
     val viewMode by viewModel.viewMode.collectAsState()
     val dashboardData by viewModel.dashboardData.collectAsState()
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     var showAddSpaceDialog by remember { mutableStateOf(false) }
+
     var showAddProjectDialog by remember { mutableStateOf(false) }
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -78,16 +85,26 @@ fun ProjectsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Projects") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Projects",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+
+        onNodeSelected = { viewModel.selectNode(it.id) }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Projects") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+
+                    actions = {
                     if (isProjectSelected) {
                          IconButton(onClick = { viewModel.setViewMode(if (viewMode == "List") "Board" else "List") }) {
                             Icon(
@@ -129,24 +146,17 @@ fun ProjectsScreen(
             }
         }
     ) { padding ->
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedNodeId,
-                onNodeSelected = { viewModel.selectNode(it.id) },
-                modifier = Modifier.width(260.dp)
-            )
-
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
+                    .fillMaxSize()
                     .padding(24.dp)
             ) {
+
                 if (isProjectSelected) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         
@@ -190,8 +200,10 @@ fun ProjectsScreen(
                 }
             }
         }
+        }
     }
 }
+
 
 @Composable
 fun EmptyProjectState() {

@@ -28,7 +28,9 @@ Shared components and base logic accessible by all features.
   - `MainActivity.kt`: NavHost entry point.
   - `FeatureViewModel.kt`: Feature-scoped business logic and state management.
   - `FeatureScreen.kt`: Composable UI entry point for a feature.
+  - `NavDrawerTreePanel.kt`: Standard navigation drawer for applets.
   - `Repository.kt`: Data access abstraction.
+
 
 ## Design Patterns
 

@@ -86,8 +86,10 @@ fun CameraControlPanel(
     onCapture: () -> Unit,
     onPauseRecording: () -> Unit,
     onResumeRecording: () -> Unit,
-    onNavigateToGallery: () -> Unit
+    onNavigateToGallery: () -> Unit,
+    onMenuClick: () -> Unit
 ) {
+
     // Quad-Border Cockpit Layout
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
@@ -130,8 +132,10 @@ fun CameraControlPanel(
             ) {
                 CockpitTopBar(
                     flashModePref, torchEnabled, aiSceneDetection, supportedExtensions, extensionMode, cameraMode, timelapseMode, scanQrCodes,
-                    onFlashModeChange, onTorchChange, onAiSceneDetectionChange, onExtensionModeChange, onTimelapseModeChange, onScanQrCodesChange
+                    onFlashModeChange, onTorchChange, onAiSceneDetectionChange, onExtensionModeChange, onTimelapseModeChange, onScanQrCodesChange,
+                    onMenuClick
                 )
+
             }
         }
 

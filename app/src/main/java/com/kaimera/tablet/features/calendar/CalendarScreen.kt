@@ -12,7 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Menu
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Person
+
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.*
@@ -28,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +43,9 @@ fun CalendarScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     val treeNodes = remember {
         listOf(
             TreeNode("personal", "Personal", Icons.Default.Person),
@@ -47,57 +55,55 @@ fun CalendarScreen(
     }
     var selectedNodeId by remember { mutableStateOf("personal") }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Calendar", style = MaterialTheme.typography.headlineSmall)
-                        Spacer(modifier = Modifier.width(32.dp))
-                        IconButton(onClick = { /* Prev Month */ }) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = null)
-                        }
-                        Text(
-                            text = "January 2026",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                        IconButton(onClick = { /* Next Month */ }) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = null)
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedNodeId,
-                onNodeSelected = { selectedNodeId = it.id },
-                modifier = Modifier.width(220.dp)
-            )
+    NavDrawerTreePanel(
+        drawerState = drawerState,
+        title = "Calendar",
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
 
+        onNodeSelected = { selectedNodeId = it.id }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Calendar", style = MaterialTheme.typography.headlineSmall)
+                            Spacer(modifier = Modifier.width(32.dp))
+                            IconButton(onClick = { /* Prev Month */ }) {
+                                Icon(Icons.Default.ChevronLeft, contentDescription = null)
+                            }
+                            Text(
+                                text = "January 2026",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            IconButton(onClick = { /* Next Month */ }) {
+                                Icon(Icons.Default.ChevronRight, contentDescription = null)
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(16.dp)
+                    .fillMaxSize()
+                    .padding(padding)
             ) {
+
                 Column {
                     // Weekday Headers
                     Row(modifier = Modifier.fillMaxWidth()) {

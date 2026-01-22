@@ -3,8 +3,9 @@
 ## Project Identity
 - **Name**: Kaimera Tablet
 - **Target Device**: Xiaomi Pad 2 Pro
-- **Current Version**: v0.0.63 (Maps Foundation)
+- **Current Version**: v0.0.64 (Nav Harmonization)
 - **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, osmdroid 6.1.18, Room, Android SDK 35
+
 
 ## Architecture
 - **Single Activity**: `MainActivity` hosts the `NavHost`.
@@ -12,10 +13,11 @@
 - **UI Structure**:
     - `LauncherScreen`: Entry point, grid of icons.
     - `CameraScreen`: CameraX-based capture interface with Pro features.
-    - `SettingsScreen`: App-wide and applet-specific settings with hierarchical **Tree Panel**.
-    - `FilesScreen`: Media management with hierarchical **Tree Panel**.
-    - `NotesScreen`: Distraction-free editor with hierarchical **Tree Panel**.
-    - `TreePanel`: Reusable hierarchical navigation sidebar.
+    - `SettingsScreen`: App-wide and applet-specific settings with **NavDrawerTreePanel**.
+    - `FilesScreen`: Media management with **NavDrawerTreePanel**.
+    - `NotesScreen`: Distraction-free editor with **NavDrawerTreePanel**.
+    - `NavDrawerTreePanel`: Standard modal navigation drawer for all applets.
+
     - `ProjectsScreen`: Hierarchical Project Management with Room Persistence.
     - `MapsScreen`: OpenStreetMap-based interactive map using `osmdroid`.
 
@@ -28,7 +30,8 @@
 - `app/src/main/java/com/kaimera/tablet/features/maps/data/MapsDatabase.kt`: Maps Room Database.
 - `app/src/main/java/com/kaimera/tablet/features/maps/data/MapsRepository.kt`: Maps data access layer.
 - `app/src/main/java/com/kaimera/tablet/features/maps/MapsScreen.kt`: OpenStreetMap view.
-- `app/src/main/java/com/kaimera/tablet/core/ui/components/TreePanel.kt`: Reusable tree component.
+- `app/src/main/java/com/kaimera/tablet/core/ui/components/NavDrawerTreePanel.kt`: Standard modal drawer.
+
 - `app/build.gradle.kts`: Dependency management (includes CameraX, osmdroid, Coil, Room).
 
 ## Environment Quirks

@@ -56,11 +56,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.core.ui.components.NavDrawerTreePanel
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Star
+
 
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -112,40 +118,29 @@ fun FilesScreen(
     }
     var selectedNodeId by remember { mutableStateOf("all") }
 
-    com.kaimera.tablet.core.ui.components.AppletScaffold(
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    NavDrawerTreePanel(
+        drawerState = drawerState,
         title = "Files",
-        onBack = onBack
-    ) { paddingValues ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                // .padding(paddingValues) // Scaffold padding is already applied by the Box in AppletScaffold, but we need to check if AppletScaffold applies it to the content box or passes it. 
-                // AppletScaffold implementation: content(paddingValues) inside a Box that has padding(paddingValues).
-                // Wait, if I pass `paddingValues` to `Row` here, it will double pad if AppletScaffold also pads.
-                // My AppletScaffold implementation:
-                // content = { paddingValues ->
-                //    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                //        content(paddingValues) 
-                //    }
-                // }
-                // So the `content` lambda receives `paddingValues` but the parent Box ALREADY applied them. 
-                // So I SHOULD NOT apply `paddingValues` again here if I am inside that Box.
-                // BUT, wait. `Row` is the root of MY content. 
-                // If AppletScaffold does `.padding(paddingValues)`, then everything inside is fine.
-        ) {
-            TreePanel(
-                nodes = treeNodes,
-                selectedNodeId = selectedNodeId,
-                onNodeSelected = { selectedNodeId = it.id },
-                modifier = Modifier.width(240.dp)
-            )
+        onHomeClick = onBack,
+        nodes = treeNodes,
+        selectedNodeId = selectedNodeId,
+
+        onNodeSelected = { selectedNodeId = it.id }
+    ) {
+        com.kaimera.tablet.core.ui.components.AppletScaffold(
+            title = "Files",
+            onMenuClick = { scope.launch { drawerState.open() } }
+        ) { paddingValues ->
 
             Box(
                 modifier = Modifier
-                    .weight(1f),
-                    // .statusBarsPadding(), // Scaffold handles this
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+
                 when (val state = uiState) {
                     is FilesUiState.Loading -> {
                         CircularProgressIndicator()
