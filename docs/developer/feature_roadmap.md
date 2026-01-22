@@ -120,7 +120,7 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 ## Phase 5: Multi-Utility Expansion (v0.1.0 - In Progress)
 *Goal: Expand the tablet's capabilities with essential productivity and utility applets.*
 
-### 5.1 Browser Applet (v0.0.30 - Enhanced MVP)
+### 5.1 Browser Applet (v0.0.31 - Enhanced MVP)
 - **MVP (Completed)**: Address bar, WebView integration, basic navigation controls (Back/Forward/Refresh).
 - **Premium Polish (Completed)**: Progress bar, Home button, Persistent URL storage, and dedicated ViewModel.
 
