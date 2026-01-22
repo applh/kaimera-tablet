@@ -154,14 +154,18 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **v0.0.60 (Completed)**: Projects MVP implementation with hierarchical TreePanel navigation.
 - **Inter-Applet Sync**: Deadline syncing between Projects and Calendar.
 
-## Phase 8: The World (v0.1.0+ - In Progress)
+## Phase 8: The World (v0.1.0 - MVP Completed)
 *Goal: Robust mapping and geofencing capabilities.*
 
-### 8.1 Maps Applet (v0.0.63 - Phase A Completed)
+### 8.1 Maps Applet (v0.1.0 - MVP Released)
 - **Foundation (Completed)**: Added `osmdroid` mapping engine and registered the `MapsScreen` in launcher.
 - **Visuals (Completed)**: Interactive world map with pan and multi-touch zoom support.
+- **Location (Completed)**: Real-time user position tracking, bearing, and compass overlay.
+- **Persistence (Completed)**: Room Database for "Saved Places" and session state persistence.
+- **Organization (Completed)**: Integrated the **Tree Panel** for managing favorite locations.
 
 ## Future Phases
+
 - **Cloud Sync**: Integrate with Kaimera Cloud for multi-device support.
 - **Notification Center**: System-wide alerts for deadlines and assignments.
 

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -36,6 +37,9 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
         val KEY_TIMELAPSE_MODE = androidx.datastore.preferences.core.booleanPreferencesKey("timelapse_mode")
         val KEY_TIMELAPSE_INTERVAL = androidx.datastore.preferences.core.longPreferencesKey("timelapse_interval")
         val KEY_BROWSER_LAST_URL = androidx.datastore.preferences.core.stringPreferencesKey("browser_last_url")
+        val KEY_MAPS_LAST_LAT = doublePreferencesKey("maps_last_lat")
+        val KEY_MAPS_LAST_LON = doublePreferencesKey("maps_last_lon")
+        val KEY_MAPS_LAST_ZOOM = doublePreferencesKey("maps_last_zoom")
     }
 
     val gridRows: Flow<Int> = context.dataStore.data
@@ -91,6 +95,15 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
 
     val browserLastUrl: Flow<String> = context.dataStore.data
         .map { preferences -> preferences[KEY_BROWSER_LAST_URL] ?: "https://www.google.com" }
+
+    val mapsLastLat: Flow<Double> = context.dataStore.data
+        .map { preferences -> preferences[KEY_MAPS_LAST_LAT] ?: 0.0 }
+
+    val mapsLastLon: Flow<Double> = context.dataStore.data
+        .map { preferences -> preferences[KEY_MAPS_LAST_LON] ?: 0.0 }
+
+    val mapsLastZoom: Flow<Double> = context.dataStore.data
+        .map { preferences -> preferences[KEY_MAPS_LAST_ZOOM] ?: 2.0 }
 
     suspend fun setGridRows(rows: Int) {
         context.dataStore.edit { preferences ->
@@ -197,6 +210,14 @@ class UserPreferencesRepository @Inject constructor(private val context: Context
     suspend fun setBrowserLastUrl(url: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_BROWSER_LAST_URL] = url
+        }
+    }
+
+    suspend fun setMapsLastState(lat: Double, lon: Double, zoom: Double) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_MAPS_LAST_LAT] = lat
+            preferences[KEY_MAPS_LAST_LON] = lon
+            preferences[KEY_MAPS_LAST_ZOOM] = zoom
         }
     }
 }

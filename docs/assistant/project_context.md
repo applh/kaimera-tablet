@@ -3,8 +3,8 @@
 ## Project Identity
 - **Name**: Kaimera Tablet
 - **Target Device**: Xiaomi Pad 2 Pro
-- **Current Version**: v0.0.63 (Maps Foundation)
-- **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, osmdroid 6.1.18, Android SDK 35 (VanillaIceCream)
+- **Current Version**: v0.1.0 (The World Update)
+- **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, osmdroid 6.1.18, Room, Android SDK 35
 
 ## Architecture
 - **Single Activity**: `MainActivity` hosts the `NavHost`.
@@ -25,6 +25,8 @@
 - `app/src/main/java/com/kaimera/tablet/features/projects/ProjectsScreen.kt`: Projects UI.
 - `app/src/main/java/com/kaimera/tablet/data/local/ProjectsDatabase.kt`: Room Database definition.
 - `app/src/main/java/com/kaimera/tablet/data/repository/ProjectRepository.kt`: Data access layer.
+- `app/src/main/java/com/kaimera/tablet/features/maps/data/MapsDatabase.kt`: Maps Room Database.
+- `app/src/main/java/com/kaimera/tablet/features/maps/data/MapsRepository.kt`: Maps data access layer.
 - `app/src/main/java/com/kaimera/tablet/features/maps/MapsScreen.kt`: OpenStreetMap view.
 - `app/src/main/java/com/kaimera/tablet/core/ui/components/TreePanel.kt`: Reusable tree component.
 - `app/build.gradle.kts`: Dependency management (includes CameraX, osmdroid, Coil, Room).
