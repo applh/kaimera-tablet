@@ -159,7 +159,12 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **Navigation**: **Tree Panel** for managing multiple calendar sources.
 - **Interoperability**: Connect with Projects to show task deadlines.
 
-### 7.2 Projects (v0.0.55)
-- **Hierarchy**: Space -> Project -> Task management via **Tree Panel**.
-- **Execution**: Kanban boards and task lists.
-- **Synergy**: Link Files and Notes directly to specific project nodes.
+### 7.2 Projects (v0.0.60 - MVP Completed)
+- **Hierarchy (Completed)**: Space -> Project -> Task management via **Tree Panel**.
+- **Execution (Completed)**: Kanban boards and task lists.
+- **Synergy (Completed)**: Link Files and Notes directly to specific project nodes.
+- **Visuals (Completed)**: Dashboards, filters, and team assignment simulation.
+
+## Future Phases
+- **Cloud Sync**: Integrate with Kaimera Cloud for multi-device support.
+- **Notification Center**: System-wide alerts for deadlines and assignments.

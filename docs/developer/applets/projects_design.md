@@ -142,22 +142,22 @@ A unified "Home" view for the applet:
 ## 4. Implementation Plan
 
 ### Phase A: Foundation (v0.0.51)
-*   [ ] Add Room dependencies to `build.gradle.kts`.
-*   [ ] Define Entities (`Project`, `Task`, `Tag`) and DAOs.
-*   [ ] Create `ProjectsDatabase` and Hilt modules.
-*   [ ] Build basic `ProjectRepository`.
+*   [x] Add Room dependencies to `build.gradle.kts`.
+*   [x] Define Entities (`Project`, `Task`, `Tag`) and DAOs.
+*   [x] Create `ProjectsDatabase` and Hilt modules.
+*   [x] Build basic `ProjectRepository`.
 
 ### Phase B: Structure & CRUD (v0.0.53)
-*   [ ] Implement **Tree Panel** UI for Spaces & Projects.
-*   [ ] Create UI to Add/Edit/Delete Projects.
-*   [ ] Create UI to Add/Edit/Delete Tasks (List View only).
+*   [x] Implement **Tree Panel** UI for Spaces & Projects.
+*   [x] Create UI to Add/Edit/Delete Projects.
+*   [x] Create UI to Add/Edit/Delete Tasks (List View only).
 
 ### Phase C: Task Board & Logic (v0.0.55 - MVP)
-*   [ ] Implement **Kanban Board** logic (drag-and-drop state changes).
-*   [ ] Add Filter/Sort logic (by Tag, Priority).
-*   [ ] Implement "Dashboard" view.
+*   [x] Implement **Kanban Board** logic (drag-and-drop state changes).
+*   [x] Add Filter/Sort logic (by Tag, Priority).
+*   [x] Implement "Dashboard" view.
 
 ### Phase D: Polish (v0.0.60)
-*   [ ] User/Team mock implementation.
-*   [ ] Inter-applet linking (Attach File to Task).
-*   [ ] Implement Import/Export (JSON/CSV) logic.
+*   [x] User/Team mock implementation.
+*   [x] Inter-applet linking (Attach File to Task).
+*   [x] Implement Import/Export (JSON/CSV) logic.

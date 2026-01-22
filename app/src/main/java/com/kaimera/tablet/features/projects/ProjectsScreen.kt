@@ -2,7 +2,6 @@ package com.kaimera.tablet.features.projects
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,8 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kaimera.tablet.core.ui.components.TreeNode
 import com.kaimera.tablet.core.ui.components.TreePanel
+import com.kaimera.tablet.data.local.entities.Task
+import com.kaimera.tablet.features.projects.components.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,23 +32,51 @@ fun ProjectsScreen(
     onBack: () -> Unit = {},
     viewModel: ProjectsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val treeNodes by viewModel.treeNodes.collectAsState()
+    val selectedNodeId by viewModel.selectedNodeId.collectAsState()
+    val tasks by viewModel.currentTasks.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val dashboardData by viewModel.dashboardData.collectAsState()
 
-    val treeNodes = remember {
-        listOf(
-            TreeNode("spaces", "Spaces", Icons.Default.HomeWork, children = listOf(
-                TreeNode("eng", "Engineering", Icons.Default.Folder, children = listOf(
-                    TreeNode("kaimera", "Kaimera Tablet", Icons.Default.Assignment),
-                    TreeNode("backend", "API Service", Icons.Default.Assignment)
-                )),
-                TreeNode("design", "Design", Icons.Default.Folder, children = listOf(
-                    TreeNode("uiux", "UI/UX Revamp", Icons.Default.Assignment)
-                ))
-            )),
-            TreeNode("archive", "Archive", Icons.Default.Inventory)
+    var showAddSpaceDialog by remember { mutableStateOf(false) }
+    var showAddProjectDialog by remember { mutableStateOf(false) }
+    var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+
+    val isProjectSelected = selectedNodeId?.startsWith("project_") == true
+    val isSpaceSelected = selectedNodeId?.startsWith("space_") == true
+
+    if (showAddSpaceDialog) {
+        AddSpaceDialog(
+            onDismiss = { showAddSpaceDialog = false },
+            onConfirm = { name -> viewModel.createSpace(name); showAddSpaceDialog = false }
         )
     }
-    var selectedNodeId by remember { mutableStateOf("kaimera") }
+
+    if (showAddProjectDialog && isSpaceSelected) {
+        AddProjectDialog(
+            onDismiss = { showAddProjectDialog = false },
+            onConfirm = { name, desc ->
+                val spaceId = selectedNodeId?.removePrefix("space_")?.toLongOrNull()
+                if (spaceId != null) viewModel.createProject(spaceId, name, desc)
+                showAddProjectDialog = false
+            }
+        )
+    }
+
+    if (showAddTaskDialog && isProjectSelected) {
+        AddTaskDialog(
+            onDismiss = { showAddTaskDialog = false },
+            onConfirm = { title, assigneeName, deadline ->
+                val projectId = selectedNodeId?.removePrefix("project_")?.toLongOrNull()
+                if (projectId != null) {
+                    val assigneeId = MOCK_USERS.find { it.name == assigneeName }?.id
+                    viewModel.createTask(projectId, title, assigneeId, deadline)
+                }
+                showAddTaskDialog = false
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -57,14 +88,45 @@ fun ProjectsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Search */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    if (isProjectSelected) {
+                         IconButton(onClick = { viewModel.setViewMode(if (viewMode == "List") "Board" else "List") }) {
+                            Icon(
+                                if (viewMode == "List") Icons.Default.ViewKanban else Icons.Default.List,
+                                contentDescription = "Toggle View"
+                            )
+                        }
                     }
-                    IconButton(onClick = { /* Add Task */ }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Project")
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("New Space") },
+                                onClick = { showMenu = false; showAddSpaceDialog = true },
+                                leadingIcon = { Icon(Icons.Default.HomeWork, null) }
+                            )
+                            if (isSpaceSelected) {
+                                DropdownMenuItem(
+                                    text = { Text("New Project") },
+                                    onClick = { showMenu = false; showAddProjectDialog = true },
+                                    leadingIcon = { Icon(Icons.Default.Assignment, null) }
+                                )
+                            }
+                        }
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (isProjectSelected) {
+                FloatingActionButton(onClick = { showAddTaskDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Task")
+                }
+            }
         }
     ) { padding ->
         Row(
@@ -75,7 +137,7 @@ fun ProjectsScreen(
             TreePanel(
                 nodes = treeNodes,
                 selectedNodeId = selectedNodeId,
-                onNodeSelected = { selectedNodeId = it.id },
+                onNodeSelected = { viewModel.selectNode(it.id) },
                 modifier = Modifier.width(260.dp)
             )
 
@@ -85,93 +147,110 @@ fun ProjectsScreen(
                     .fillMaxHeight()
                     .padding(24.dp)
             ) {
-                when (val state = uiState) {
-                    is ProjectsUiState.Loading -> {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    }
-                    is ProjectsUiState.Success -> {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            ProjectHeader(selectedNodeId.replaceFirstChar { it.uppercase() })
-                            
-                            Spacer(modifier = Modifier.height(32.dp))
-                            
-                            Text(
-                                text = "Tasks",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
+                if (isProjectSelected) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        
+                        TaskFilters(
+                            onFilterChange = { viewModel.setFilter(it) },
+                            onSortChange = { viewModel.setSort(it) }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
 
+                        if (tasks.isEmpty()) {
+                            EmptyProjectState()
+                        } else if (viewMode == "Board") {
+                            KanbanBoard(
+                                tasks = tasks,
+                                onStatusChange = { task, status -> viewModel.updateTaskStatus(task, status) }
+                            )
+                        } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(listOf(
-                                    TaskItem("Implement Tree Navigation", "High", 0.8f, "In-Progress"),
-                                    TaskItem("Enhance Dashboard UI", "Medium", 0.4f, "In-Progress"),
-                                    TaskItem("Fix Dependency Injection", "High", 1.0f, "Done"),
-                                    TaskItem("Add Calendar API", "Low", 0.0f, "To-Do")
-                                )) { task ->
-                                    TaskCard(task)
+                                items(tasks) { task ->
+                                    TaskCard(task, onStatusChange = { isDone ->
+                                        viewModel.updateTaskStatus(task, if(isDone) "Done" else "Todo")
+                                    })
                                 }
                             }
                         }
                     }
-                    is ProjectsUiState.Error -> {
-                        Text(text = "Error: \${state.message}", modifier = Modifier.align(Alignment.Center))
+                } else if (isSpaceSelected) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Assignment, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.3f))
+                            Spacer(Modifier.height(16.dp))
+                            Text("Select a Project to view tasks", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
+                } else {
+                    DashboardView(dashboardData)
                 }
             }
         }
     }
 }
 
-data class TaskItem(val title: String, val priority: String, val progress: Float, val status: String)
+@Composable
+fun EmptyProjectState() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.AddTask, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha=0.5f))
+        Spacer(Modifier.height(16.dp))
+        Text("No tasks yet", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Add a task to get started", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
 @Composable
-fun ProjectHeader(name: String) {
+fun DashboardView(data: DashboardUiState) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.Dashboard, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Projects Dashboard", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            DashboardCard("Active Projects", data.activeProjectsCount.toString(), Icons.Default.Folder)
+            DashboardCard("Overdue Tasks", data.overdueTasksCount.toString(), Icons.Default.Warning)
+        }
+    }
+}
+
+@Composable
+fun DashboardCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.size(160.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(text = "Active Project", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(text = name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                }
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "72%", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            LinearProgressIndicator(
-                progress = 0.72f,
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            )
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(value, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
 @Composable
-fun TaskCard(task: TaskItem) {
-    val statusColor = when (task.status) {
-        "Done" -> Color(0xFF4CAF50)
-        "In-Progress" -> Color(0xFF2196F3)
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-    }
+fun TaskCard(task: Task, onStatusChange: (Boolean) -> Unit) {
+    val isDone = task.status == "Done"
+    val statusColor = if (isDone) Color(0xFF4CAF50) else Color(0xFF2196F3)
+    val assignee = MOCK_USERS.find { it.id == task.assignedToUserId }
+    val formatter = SimpleDateFormat("MMM dd", Locale.getDefault())
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -183,20 +262,45 @@ fun TaskCard(task: TaskItem) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(statusColor, CircleShape)
+            Checkbox(
+                checked = isDone,
+                onCheckedChange = onStatusChange
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = task.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(text = "Priority: \${task.priority}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isDone) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                     Text(
+                        text = task.status,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    if (task.dueDate != null) {
+                         Row(verticalAlignment = Alignment.CenterVertically) {
+                             Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                             Spacer(Modifier.width(4.dp))
+                             Text(formatter.format(Date(task.dueDate)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                         }
+                    }
+                    
+                    // Mock Attachment Indicator
+                    Icon(Icons.Default.AttachFile, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.5f))
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(text = task.status, style = MaterialTheme.typography.labelSmall, color = statusColor, fontWeight = FontWeight.Bold)
-                if (task.progress > 0f) {
-                    Text(text = "\${(task.progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
+            
+            if (assignee != null) {
+                Box(
+                    modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(assignee.initials, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
             }
         }

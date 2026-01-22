@@ -26,6 +26,9 @@ interface ProjectDao {
     @Query("SELECT * FROM projects WHERE spaceId = :spaceId")
     fun getProjectsBySpace(spaceId: Long): Flow<List<Project>>
 
+    @Query("SELECT * FROM projects")
+    fun getAllProjects(): Flow<List<Project>>
+
     @Query("SELECT * FROM projects WHERE id = :projectId")
     suspend fun getProjectById(projectId: Long): Project?
 

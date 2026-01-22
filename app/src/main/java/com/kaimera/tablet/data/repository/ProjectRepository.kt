@@ -24,6 +24,8 @@ class ProjectRepository @Inject constructor(
     fun getProjectsInSpace(spaceId: Long): Flow<List<Project>> =
         projectDao.getProjectsBySpace(spaceId)
 
+    fun getAllProjects(): Flow<List<Project>> = projectDao.getAllProjects()
+
     fun getProjectWithTasks(projectId: Long): Flow<ProjectWithTasks> =
         projectDao.getProjectWithTasks(projectId)
 
