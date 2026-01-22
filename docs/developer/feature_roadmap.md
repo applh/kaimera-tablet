@@ -144,6 +144,7 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **Files (v0.0.37)**: Robust "Rename" feature with scoped storage permission handling.
 - **Tree Panel (v0.0.42)**: New hierarchical navigation component implemented for **Files**, **Notes**, and **Settings** applets to manage deep structures.
 - **Core (v0.0.38)**: 
+    - **Launcher (v0.0.47)**: Implemented "HoneyComb" Hexagonal Grid layout for main applet screen.
     - **APK Optimization**: Reduced debug size by 50% (131MB -> 66MB) via ABI filtering and Play Services ML Kit.
     - **AI Scene Fix**: Resolved async frame lifecycle bugs and enabled auto-model downloading.
 - **Notes**: Markdown support and media attachments.

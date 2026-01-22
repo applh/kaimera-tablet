@@ -2,29 +2,24 @@ package com.kaimera.tablet.features.launcher
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -35,12 +30,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.kaimera.tablet.R
+
+data class AppletItem(
+    val name: String,
+    val icon: ImageVector,
+    val route: String
+)
 
 @Composable
 fun LauncherScreen(onAppletSelected: (String) -> Unit) {
+    val applets = listOf(
+        AppletItem("Camera", Icons.Default.PhotoCamera, "camera"),
+        AppletItem("Files", Icons.Default.Folder, "files"),
+        AppletItem("Browser", Icons.Default.Language, "browser"),
+        AppletItem("Notes", Icons.Default.EditNote, "notes"),
+        AppletItem("Downloads", Icons.Default.Download, "downloads"),
+        AppletItem("Settings", Icons.Default.Settings, "settings"),
+        AppletItem("Calendar", Icons.Default.Event, "calendar"),
+        AppletItem("Projects", Icons.AutoMirrored.Filled.Assignment, "projects")
+    )
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -56,65 +66,16 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
                 modifier = Modifier.padding(bottom = 32.dp)
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp)
-            ) {
+            HexagonalGrid(
+                items = applets,
+                columns = 3,
+                itemSize = 140.dp, // Slightly larger for better touch targets
+                spacing = 16.dp
+            ) { applet ->
                 LauncherIcon(
-                    name = "Camera",
-                    icon = Icons.Default.PhotoCamera,
-                    onClick = { onAppletSelected("camera") }
-                )
-                LauncherIcon(
-                    name = "Files",
-                    icon = Icons.Default.Folder,
-                    onClick = { onAppletSelected("files") }
-                )
-                LauncherIcon(
-                    name = "Browser",
-                    icon = Icons.Default.Language,
-                    onClick = { onAppletSelected("browser") }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp)
-            ) {
-                LauncherIcon(
-                    name = "Notes",
-                    icon = Icons.Default.EditNote,
-                    onClick = { onAppletSelected("notes") }
-                )
-                LauncherIcon(
-                    name = "Downloads",
-                    icon = Icons.Default.Download,
-                    onClick = { onAppletSelected("downloads") }
-                )
-
-                Spacer(modifier = Modifier.width(48.dp))
-
-                LauncherIcon(
-                    name = "Settings",
-                    icon = Icons.Default.Settings,
-                    onClick = { onAppletSelected("settings") }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp)
-            ) {
-                LauncherIcon(
-                    name = "Calendar",
-                    icon = Icons.Default.Event,
-                    onClick = { onAppletSelected("calendar") }
-                )
-                LauncherIcon(
-                    name = "Projects",
-                    icon = Icons.Default.Assignment,
-                    onClick = { onAppletSelected("projects") }
+                    name = applet.name,
+                    icon = applet.icon,
+                    onClick = { onAppletSelected(applet.route) }
                 )
             }
         }
@@ -127,15 +88,15 @@ fun LauncherIcon(name: String, icon: ImageVector, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clickable(onClick = onClick)
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
         Card(
-            modifier = Modifier.size(80.dp),
-            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.size(100.dp), // Adjust size relative to grid cell
+            shape = HexagonShape(),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -144,15 +105,15 @@ fun LauncherIcon(name: String, icon: ImageVector, onClick: () -> Unit) {
                 Icon(
                     imageVector = icon,
                     contentDescription = name,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = name, 
-            style = MaterialTheme.typography.titleMedium,
+            text = name,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
     }
