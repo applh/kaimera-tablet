@@ -27,7 +27,7 @@ CameraX 1.5.0+ stabilizes the `camera-compose` artifact, allowing us to remove t
 *   **Root Cause**: Device driver incompatibility or conflict with `Camera2Interop` settings (FPS ranges).
 *   **Status**: Feature is **DEFERRED** until stability is proven. Do *not* enable blindly.
 
-## 6. Phase C: Ultra HDR (Completed)
+## 6. Phase C: Ultra HDR (Completed v0.0.28)
 
 *   **Status**: ✅ Implemented 10-bit HDR checks and configuration in `CameraManager`.
 *   **Goal**: Capture "Professional" quality images/video in 10-bit HDR (HLG10/JPEG_R).

@@ -155,6 +155,18 @@ class CameraManager(private val context: Context) {
         
         setupImageAnalysis(scanQrCodes, aiSceneDetection)
 
+        // 1. Create CameraSelector to check capabilities
+        val cameraSelector = CameraSelector.Builder()
+            .requireLensFacing(lensFacing)
+            .build()
+            
+        // 2. Check for 10-bit HDR support
+        val dynamicRange = if (is10BitSupported(cameraSelector)) {
+            DynamicRange.HDR_UNSPECIFIED_10_BIT
+        } else {
+            DynamicRange.SDR
+        }
+
         val quality = when (videoResolutionTier) {
             0 -> Quality.HD
             2 -> Quality.UHD
@@ -170,6 +182,7 @@ class CameraManager(private val context: Context) {
             .build()
         videoCapture = VideoCapture.Builder(recorder)
             .setTargetFrameRate(android.util.Range(targetFps, targetFps))
+            .setDynamicRange(dynamicRange)
             .build()
 
         val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
@@ -189,6 +202,7 @@ class CameraManager(private val context: Context) {
 
         val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
+            .setDynamicRange(dynamicRange)
 
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
@@ -196,9 +210,7 @@ class CameraManager(private val context: Context) {
         val preview = previewBuilder.build()
         preview.setSurfaceProvider { request -> _surfaceRequest.value = request }
 
-        val cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
+
 
         try {
             provider.unbindAll()
@@ -236,6 +248,15 @@ class CameraManager(private val context: Context) {
         checkExtensionAvailability(lensFacing)
         _flashMode.value = flashMode
 
+        var cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+        
+        // 10-bit HDR check
+        val dynamicRange = if (is10BitSupported(cameraSelector)) {
+             DynamicRange.HDR_UNSPECIFIED_10_BIT
+        } else {
+             DynamicRange.SDR
+        }
+
         val isPortrait = windowSize.width < windowSize.height
         val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
         
@@ -257,14 +278,13 @@ class CameraManager(private val context: Context) {
 
         val previewBuilder = Preview.Builder()
             .setResolutionSelector(resolutionSelector)
+            .setDynamicRange(dynamicRange)
         
         Camera2Interop.Extender(previewBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
         preview.setSurfaceProvider { request -> _surfaceRequest.value = request }
-
-        var cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
             
         if (extensionMode != ExtensionMode.NONE && extensionsManager != null) {
             if (extensionsManager!!.isExtensionAvailable(cameraSelector, extensionMode)) {
@@ -281,6 +301,7 @@ class CameraManager(private val context: Context) {
             .setResolutionSelector(resolutionSelector)
             .setFlashMode(flashMode)
             .setJpegQuality(jpegQuality)
+            .setDynamicRange(dynamicRange)
 
         Camera2Interop.Extender(imageCaptureBuilder)
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
@@ -509,6 +530,19 @@ class CameraManager(private val context: Context) {
     fun resumeVideoRecording() {
         if (_isRecording.value && _isPaused.value) {
             recording?.resume()
+        }
+    }
+
+    private fun is10BitSupported(cameraSelector: CameraSelector): Boolean {
+        val provider = cameraProvider ?: return false
+        return try {
+             val validCameras = cameraSelector.filter(provider.availableCameraInfos)
+             validCameras.any { cameraInfo ->
+                 val supported = cameraInfo.querySupportedDynamicRanges(setOf(DynamicRange.HDR_UNSPECIFIED_10_BIT))
+                 supported.contains(DynamicRange.HDR_UNSPECIFIED_10_BIT)
+             }
+        } catch (e: Exception) {
+             false
         }
     }
 
