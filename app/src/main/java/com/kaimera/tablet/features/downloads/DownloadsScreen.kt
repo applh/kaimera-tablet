@@ -1,5 +1,7 @@
 package com.kaimera.tablet.features.downloads
 
+import com.kaimera.tablet.core.ui.components.TreeNode
+import com.kaimera.tablet.core.ui.components.TreePanel
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -28,6 +30,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadsScreen(
@@ -38,6 +41,7 @@ fun DownloadsScreen(
     val files by viewModel.files.collectAsStateWithLifecycle()
     val storageInfo by viewModel.storageInfo.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -133,47 +137,75 @@ fun DownloadsScreen(
             }
         }
     ) { padding ->
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (files.isEmpty() && !isRefreshing) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownloadOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "No downloads found",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+            val treeNodes = remember {
+                listOf(
+                    TreeNode("all", "All Files", Icons.Default.Folder),
+                    TreeNode("recent", "Recent", Icons.Default.History),
+                    TreeNode("images", "Images", Icons.Default.Image),
+                    TreeNode("videos", "Videos", Icons.Default.VideoLibrary),
+                    TreeNode("documents", "Documents", Icons.Default.Description),
+                    TreeNode("others", "Others", Icons.Default.InsertDriveFile)
+                )
+            }
+
+            TreePanel(
+                nodes = treeNodes,
+                selectedNodeId = selectedCategory.id,
+                onNodeSelected = { node ->
+                    val category = DownloadsViewModel.DownloadsCategory.values()
+                        .find { it.id == node.id } ?: DownloadsViewModel.DownloadsCategory.ALL
+                    viewModel.onCategorySelected(category)
+                },
+                modifier = Modifier.width(240.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                if (files.isEmpty() && !isRefreshing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownloadOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "No downloads found",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(files) { downloadFile ->
-                        DownloadItem(
-                            file = downloadFile,
-                            onOpen = { openFile(context, downloadFile.file) },
-                            onDelete = { viewModel.deleteFile(downloadFile) }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(files) { downloadFile ->
+                            DownloadItem(
+                                file = downloadFile,
+                                onOpen = { openFile(context, downloadFile.file) },
+                                onDelete = { viewModel.deleteFile(downloadFile) }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
                     }
                 }
             }

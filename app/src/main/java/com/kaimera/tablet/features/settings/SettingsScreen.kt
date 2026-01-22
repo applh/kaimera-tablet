@@ -51,6 +51,7 @@ import com.kaimera.tablet.features.camera.CameraSettings
 
 @Composable
 fun SettingsScreen(
+    onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -72,33 +73,38 @@ fun SettingsScreen(
     }
     var selectedNodeId by remember { mutableStateOf("home") }
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        TreePanel(
-            nodes = treeNodes,
-            selectedNodeId = selectedNodeId,
-            onNodeSelected = { selectedNodeId = it.id },
-            modifier = Modifier
-                .width(220.dp)
-                .statusBarsPadding()
-        )
-
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .statusBarsPadding(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
+    com.kaimera.tablet.core.ui.components.AppletScaffold(
+        title = "Settings",
+        onBack = onBack
+    ) { paddingValues ->
+        Row(modifier = Modifier.fillMaxSize()) {
+            TreePanel(
+                nodes = treeNodes,
+                selectedNodeId = selectedNodeId,
+                onNodeSelected = { selectedNodeId = it.id },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
+                    .width(220.dp)
+                    // .statusBarsPadding() // Handled by AppletScaffold
+            )
+
+            Surface(
+                modifier = Modifier
+                    .weight(1f),
+                    // .statusBarsPadding(), // Handled by AppletScaffold
+                color = MaterialTheme.colorScheme.background
             ) {
-                when (selectedNodeId) {
-                    "home" -> GeneralSettings(isDebugMode) {
-                        scope.launch { userPreferences.setDebugMode(it) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                ) {
+                    when (selectedNodeId) {
+                        "home" -> GeneralSettings(isDebugMode) {
+                            scope.launch { userPreferences.setDebugMode(it) }
+                        }
+                        "camera" -> CameraSettings()
+                        else -> PlaceholderSettings(selectedNodeId.replaceFirstChar { it.uppercase() })
                     }
-                    "camera" -> CameraSettings()
-                    else -> PlaceholderSettings(selectedNodeId.replaceFirstChar { it.uppercase() })
                 }
             }
         }

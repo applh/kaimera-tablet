@@ -12,8 +12,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -38,8 +41,23 @@ class DownloadsViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private val _files = MutableStateFlow<List<DownloadFile>>(emptyList())
-    val files: StateFlow<List<DownloadFile>> = _files.asStateFlow()
+    enum class DownloadsCategory(val id: String, val label: String) {
+        ALL("all", "All Files"),
+        RECENT("recent", "Recent"),
+        IMAGES("images", "Images"),
+        VIDEOS("videos", "Videos"),
+        DOCUMENTS("documents", "Documents"),
+        OTHERS("others", "Others")
+    }
+
+    private val _rawFiles = MutableStateFlow<List<DownloadFile>>(emptyList())
+    
+    private val _selectedCategory = MutableStateFlow(DownloadsCategory.ALL)
+    val selectedCategory: StateFlow<DownloadsCategory> = _selectedCategory.asStateFlow()
+
+    val files: StateFlow<List<DownloadFile>> = combine(_rawFiles, _selectedCategory) { files, category ->
+        filterFiles(files, category)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _storageInfo = MutableStateFlow<StorageInfo?>(null)
     val storageInfo: StateFlow<StorageInfo?> = _storageInfo.asStateFlow()
@@ -60,6 +78,10 @@ class DownloadsViewModel @Inject constructor(
         }
     }
 
+    fun onCategorySelected(category: DownloadsCategory) {
+        _selectedCategory.value = category
+    }
+
     private fun loadFiles() {
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val fileList = dir.listFiles()?.map {
@@ -72,7 +94,30 @@ class DownloadsViewModel @Inject constructor(
             )
         }?.sortedByDescending { it.lastModified } ?: emptyList()
         
-        _files.value = fileList
+        _rawFiles.value = fileList
+    }
+
+    private fun filterFiles(files: List<DownloadFile>, category: DownloadsCategory): List<DownloadFile> {
+        return when (category) {
+            DownloadsCategory.ALL -> files
+            DownloadsCategory.RECENT -> {
+                val oneWeekAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
+                files.filter { it.lastModified >= oneWeekAgo }
+            }
+            DownloadsCategory.IMAGES -> files.filter { 
+                it.name.substringAfterLast('.', "").lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif") 
+            }
+            DownloadsCategory.VIDEOS -> files.filter { 
+                it.name.substringAfterLast('.', "").lowercase() in setOf("mp4", "mkv", "avi", "mov", "webm") 
+            }
+            DownloadsCategory.DOCUMENTS -> files.filter { 
+                it.name.substringAfterLast('.', "").lowercase() in setOf("pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx", "ppt", "pptx") 
+            }
+            DownloadsCategory.OTHERS -> files.filter {
+                val ext = it.name.substringAfterLast('.', "").lowercase()
+                ext !in setOf("jpg", "jpeg", "png", "webp", "gif", "mp4", "mkv", "avi", "mov", "webm", "pdf", "doc", "docx", "txt", "rtf", "xls", "xlsx", "ppt", "pptx")
+            }
+        }
     }
 
     private fun loadStorageInfo() {

@@ -36,9 +36,9 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
     - **Delete**: Remove files from local storage.
 - **Manual Download**: Dialog to paste a URL and start a download manually.
 - **Storage Tracking**: Show remaining device storage space.
+- **Tree Panel**: Navigation sidebar for category filtering (All, Recent, Images, Videos, Documents).
 
 ### Future Enhancements
-- **Category Filtering**: Filter by Images, Videos, Documents, and Others.
 - **Search**: Quickly find specific downloaded files.
 - **Parallel Downloads**: Support and UI for multiple simultaneous downloads.
 - **Pause/Resume**: Control over active downloads.

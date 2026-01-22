@@ -66,6 +66,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun FilesScreen(
+    onBack: () -> Unit,
     onFileOpen: (MediaFile) -> Unit = {},
     viewModel: FilesViewModel = hiltViewModel()
 ) {
@@ -111,49 +112,70 @@ fun FilesScreen(
     }
     var selectedNodeId by remember { mutableStateOf("all") }
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        TreePanel(
-            nodes = treeNodes,
-            selectedNodeId = selectedNodeId,
-            onNodeSelected = { selectedNodeId = it.id },
-            modifier = Modifier.width(240.dp)
-        )
-
-        Box(
+    com.kaimera.tablet.core.ui.components.AppletScaffold(
+        title = "Files",
+        onBack = onBack
+    ) { paddingValues ->
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .statusBarsPadding(),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                // .padding(paddingValues) // Scaffold padding is already applied by the Box in AppletScaffold, but we need to check if AppletScaffold applies it to the content box or passes it. 
+                // AppletScaffold implementation: content(paddingValues) inside a Box that has padding(paddingValues).
+                // Wait, if I pass `paddingValues` to `Row` here, it will double pad if AppletScaffold also pads.
+                // My AppletScaffold implementation:
+                // content = { paddingValues ->
+                //    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                //        content(paddingValues) 
+                //    }
+                // }
+                // So the `content` lambda receives `paddingValues` but the parent Box ALREADY applied them. 
+                // So I SHOULD NOT apply `paddingValues` again here if I am inside that Box.
+                // BUT, wait. `Row` is the root of MY content. 
+                // If AppletScaffold does `.padding(paddingValues)`, then everything inside is fine.
         ) {
-            when (val state = uiState) {
-                is FilesUiState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is FilesUiState.Success -> {
-                    if (state.media.isEmpty()) {
-                        Text(
-                            text = "No images found",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 120.dp),
-                            contentPadding = PaddingValues(4.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(state.media) { media ->
-                                MediaItem(
-                                    media = media,
-                                    onOpen = { onFileOpen(media) },
-                                    onDelete = { viewModel.deleteFile(media) },
-                                    onRename = { newName -> viewModel.renameFile(media, newName) }
-                                )
+            TreePanel(
+                nodes = treeNodes,
+                selectedNodeId = selectedNodeId,
+                onNodeSelected = { selectedNodeId = it.id },
+                modifier = Modifier.width(240.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f),
+                    // .statusBarsPadding(), // Scaffold handles this
+                contentAlignment = Alignment.Center
+            ) {
+                when (val state = uiState) {
+                    is FilesUiState.Loading -> {
+                        CircularProgressIndicator()
+                    }
+                    is FilesUiState.Success -> {
+                        if (state.media.isEmpty()) {
+                            Text(
+                                text = "No images found",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 120.dp),
+                                contentPadding = PaddingValues(4.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(state.media) { media ->
+                                    MediaItem(
+                                        media = media,
+                                        onOpen = { onFileOpen(media) },
+                                        onDelete = { viewModel.deleteFile(media) },
+                                        onRename = { newName -> viewModel.renameFile(media, newName) }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                is FilesUiState.Error -> {
-                    Text(text = "Error: ${state.message}")
+                    is FilesUiState.Error -> {
+                        Text(text = "Error: ${state.message}")
+                    }
                 }
             }
         }

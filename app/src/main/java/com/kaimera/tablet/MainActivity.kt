@@ -72,6 +72,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings") {
                             SettingsScreen(
+                                onBack = { navController.popBackStack() },
                                 onNavigate = { route ->
                                     navController.navigate(route)
                                 }
@@ -79,6 +80,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("files") {
                             FilesScreen(
+                                onBack = { navController.popBackStack() },
                                 onFileOpen = { media ->
                                     val encodedUri = java.net.URLEncoder.encode(media.uri.toString(), "UTF-8")
                                     navController.navigate("viewer?uri=$encodedUri&isVideo=${media.isVideo}")
