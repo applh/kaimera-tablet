@@ -34,6 +34,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **File Actions**:
     - **Open**: Launch files using Android system intents.
     - **Delete**: Remove files from local storage.
+- **Manual Download**: Dialog to paste a URL and start a download manually.
 - **Storage Tracking**: Show remaining device storage space.
 
 ### Future Enhancements
@@ -66,6 +67,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 ### Phase 5: Multi-Utility Expansion (v0.1.0+)
 - **v0.0.36**: Browser MVP implementation (Completed).
 - **v0.0.35**: Downloads MVP implementation and Browser integration (Completed).
+- **v0.0.37**: Manual Download feature in Downloads applet (In Progress).
 - **v0.0.40**: Notes MVP implementation.
 
 ### Phase 6: System Synergy (v0.2.0+)

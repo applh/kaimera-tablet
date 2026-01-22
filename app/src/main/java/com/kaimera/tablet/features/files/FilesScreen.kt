@@ -77,10 +77,18 @@ fun FilesScreen(
 
     LaunchedEffect(actionEffect) {
         val effect = actionEffect
-        if (effect is FilesActionEffect.RequestDeletePermission) {
-            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(effect.intentSender).build()
-            launcher.launch(intentSenderRequest)
-            viewModel.clearEffect()
+        when (effect) {
+            is FilesActionEffect.RequestDeletePermission -> {
+                val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(effect.intentSender).build()
+                launcher.launch(intentSenderRequest)
+                viewModel.clearEffect()
+            }
+            is FilesActionEffect.RequestRenamePermission -> {
+                val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(effect.intentSender).build()
+                launcher.launch(intentSenderRequest)
+                viewModel.clearEffect()
+            }
+            null -> {}
         }
     }
 
@@ -140,18 +148,37 @@ fun MediaItem(
         var newName by remember { mutableStateOf(media.name) }
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text("Rename") },
+            title = { Text("Rename File") },
             text = {
-                TextField(value = newName, onValueChange = { newName = it })
+                Column {
+                    Text(
+                        "Enter a new name for the file:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    androidx.compose.material3.OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("New file name") }
+                    )
+                }
             },
             confirmButton = {
-                Button(onClick = {
-                    onRename(newName)
-                    showRenameDialog = false
-                }) { Text("OK") }
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        if (newName.isNotBlank() && newName != media.name) {
+                            onRename(newName)
+                        }
+                        showRenameDialog = false
+                    }
+                ) { Text("Rename") }
             },
             dismissButton = {
-                Button(onClick = { showRenameDialog = false }) { Text("Cancel") }
+                androidx.compose.material3.TextButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }

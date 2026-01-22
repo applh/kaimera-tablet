@@ -1,8 +1,12 @@
 package com.kaimera.tablet.features.downloads
 
+import android.app.DownloadManager
 import android.content.Context
+import android.net.Uri
 import android.os.Environment
 import android.os.StatFs
+import android.webkit.URLUtil
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -97,6 +101,25 @@ class DownloadsViewModel @Inject constructor(
                 downloadFile.file.delete()
                 refresh()
             }
+        }
+    }
+
+    fun downloadUrl(url: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                val fileName = URLUtil.guessFileName(url, null, null)
+                setTitle(fileName)
+                setDescription("Downloading manually added file...")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                setAllowedOverMetered(true)
+                setAllowedOverRoaming(true)
+            }
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(context, "Download started...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 }

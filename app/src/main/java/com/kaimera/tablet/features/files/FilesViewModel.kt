@@ -52,11 +52,11 @@ class FilesViewModel @Inject constructor(
 
     fun renameFile(file: MediaFile, newName: String) {
         viewModelScope.launch {
-            val success = repository.renameFile(file.uri, newName)
-            if (success) {
-                loadData()
+            val intentSender = repository.renameFile(file.uri, newName)
+            if (intentSender != null) {
+                _actionEffect.value = FilesActionEffect.RequestRenamePermission(intentSender)
             } else {
-                // Show error
+                loadData()
             }
         }
     }
@@ -74,4 +74,5 @@ sealed class FilesUiState {
 
 sealed class FilesActionEffect {
     data class RequestDeletePermission(val intentSender: android.content.IntentSender) : FilesActionEffect()
+    data class RequestRenamePermission(val intentSender: android.content.IntentSender) : FilesActionEffect()
 }

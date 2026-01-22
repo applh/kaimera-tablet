@@ -127,6 +127,7 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 
 ### 5.2 Downloads Applet (v0.0.35 - MVP Completed)
 - **MVP (Completed)**: List of downloaded files with "Open" and "Delete" actions.
+- **Manual Download (v0.0.37)**: Added ability to manually trigger downloads via URL input.
 - **Visuals (Completed)**: Storage usage indicator and file type icons.
 
 ### 5.3 Notes Applet (v0.0.29 - MVP Stub)
@@ -140,6 +141,7 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - Launcher-level search that queries across Browser history, Downloads, and Notes.
 
 ### 6.2 Advanced Productivity
+- **Files**: Robust "Rename" feature with scoped storage permission handling (v0.0.37).
 - **Notes**: Markdown support and media attachments.
 - **Browser**: Multi-tab support and Bookmarks.
 - **Downloads**: Search and category-based filtering.

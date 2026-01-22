@@ -39,6 +39,46 @@ fun DownloadsScreen(
     val storageInfo by viewModel.storageInfo.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        var urlText by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Add Download") },
+            text = {
+                Column {
+                    Text("Enter the URL of the file you want to download:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = urlText,
+                        onValueChange = { urlText = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("https://example.com/file.pdf") },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (urlText.isNotBlank()) {
+                            viewModel.downloadUrl(urlText)
+                            showAddDialog = false
+                        }
+                    }
+                ) {
+                    Text("Download")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -54,6 +94,11 @@ fun DownloadsScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showAddDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Download")
+            }
         },
         bottomBar = {
             storageInfo?.let { info ->

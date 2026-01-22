@@ -21,7 +21,7 @@ data class MediaFile(
 interface FilesRepository {
     suspend fun getMedia(): List<MediaFile>
     suspend fun deleteFile(uri: Uri): android.content.IntentSender?
-    suspend fun renameFile(uri: Uri, newName: String): Boolean
+    suspend fun renameFile(uri: Uri, newName: String): android.content.IntentSender?
 }
 
 class FilesRepositoryImpl @Inject constructor(@ApplicationContext private val context: Context) : FilesRepository {
@@ -112,15 +112,18 @@ class FilesRepositoryImpl @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    override suspend fun renameFile(uri: Uri, newName: String): Boolean {
+    override suspend fun renameFile(uri: Uri, newName: String): android.content.IntentSender? {
         return try {
             val values = android.content.ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, newName)
             }
-            context.contentResolver.update(uri, values, null, null) > 0
+            context.contentResolver.update(uri, values, null, null)
+            null
+        } catch (e: android.app.RecoverableSecurityException) {
+            e.userAction.actionIntent.intentSender
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            null
         }
     }
 }

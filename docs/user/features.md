@@ -25,3 +25,12 @@ The Files applet manages your captured media.
     - **Long Press** any file to open the context menu.
     - **Rename**: Change the filename.
     - **Delete**: Remove the file permanently (requires system permission on Android 10+).
+
+## Downloads Applet
+The Downloads applet manages files downloaded from the web.
+
+### Key Features
+- **Downloads List**: View and manage all downloaded files.
+- **Manual Download**: Add new download URLs directly by clicking the **+** button.
+- **Storage Tracking**: Monitor available device storage space.
+- **Quick Actions**: Open or delete files directly from the list.
