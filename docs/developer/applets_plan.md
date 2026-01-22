@@ -87,7 +87,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **v0.0.40**: Notes MVP implementation.
 
 ### Phase 6: System Synergy (v0.2.0+)
-- **Hierarchical Tree Component**: Unified navigation panel for Files and Notes (v0.0.42).
+- **Hierarchical Tree Component**: Unified navigation panel for Files, Notes, and Settings (v0.0.43).
 - **Deep Linking**: Allow applets to transition between each other (e.g., Camera -> Notes for logging).
 - **Unified Search**: Search across Browser history, Downloads, and Notes from the Launcher.
 - **Cloud Sync**: Optional background syncing for Notes and Bookmarks.

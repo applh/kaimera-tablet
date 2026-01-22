@@ -11,7 +11,7 @@
 - **UI Structure**:
     - `LauncherScreen`: Entry point, grid of icons.
     - `CameraScreen`: CameraX-based capture interface with Pro features.
-    - `SettingsScreen`: App-wide and applet-specific settings.
+    - `SettingsScreen`: App-wide and applet-specific settings with hierarchical **Tree Panel**.
     - `FilesScreen`: Media management with hierarchical **Tree Panel**.
     - `NotesScreen`: Distraction-free editor with hierarchical **Tree Panel**.
     - `TreePanel`: Reusable hierarchical navigation sidebar.

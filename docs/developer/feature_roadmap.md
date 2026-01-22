@@ -142,7 +142,7 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 
 ### 6.2 Advanced Productivity
 - **Files (v0.0.37)**: Robust "Rename" feature with scoped storage permission handling.
-- **Tree Panel (v0.0.42)**: New hierarchical navigation component implemented for both **Files** and **Notes** applets to manage deep subdirectory structures.
+- **Tree Panel (v0.0.42)**: New hierarchical navigation component implemented for **Files**, **Notes**, and **Settings** applets to manage deep structures.
 - **Core (v0.0.38)**: 
     - **APK Optimization**: Reduced debug size by 50% (131MB -> 66MB) via ABI filtering and Play Services ML Kit.
     - **AI Scene Fix**: Resolved async frame lifecycle bugs and enabled auto-model downloading.

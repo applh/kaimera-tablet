@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.unit.dp
 
@@ -33,6 +34,19 @@ import com.kaimera.tablet.core.data.UserPreferencesRepository
 import kotlinx.coroutines.launch
 
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaimera.tablet.core.ui.components.TreeNode
+import com.kaimera.tablet.core.ui.components.TreePanel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.NoteAlt
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.kaimera.tablet.features.camera.CameraSettings
 
 @Composable
 fun SettingsScreen(
@@ -43,63 +57,94 @@ fun SettingsScreen(
     val userPreferences = viewModel.userPreferences
     val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start
+    val treeNodes = remember {
+        listOf(
+            TreeNode("home", "Home", Icons.Default.Home),
+            TreeNode("applets", "Applets", Icons.Default.Apps, children = listOf(
+                TreeNode("camera", "Camera", Icons.Default.CameraAlt),
+                TreeNode("browser", "Browser", Icons.Default.Language),
+                TreeNode("downloads", "Downloads", Icons.Default.Download),
+                TreeNode("files", "Files", Icons.Default.Folder),
+                TreeNode("notes", "Notes", Icons.Default.NoteAlt)
+            ))
+        )
+    }
+    var selectedNodeId by remember { mutableStateOf("home") }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        TreePanel(
+            nodes = treeNodes,
+            selectedNodeId = selectedNodeId,
+            onNodeSelected = { selectedNodeId = it.id },
+            modifier = Modifier.width(220.dp)
+        )
+
+        Surface(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.background
         ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.displayMedium,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            // Common Section
-            SettingsSection(title = "Common") {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                val date = Date(BuildConfig.BUILD_TIMESTAMP)
-                Text(
-                    text = "Build Timestamp: ${dateFormat.format(date)}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-
-                Row(
-                   modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                   verticalAlignment = Alignment.CenterVertically,
-                   horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                      Text("Debug Mode", style = MaterialTheme.typography.bodyLarge)
-                      Switch(
-                          checked = isDebugMode,
-                          onCheckedChange = { 
-                              scope.launch { userPreferences.setDebugMode(it) }
-                          }
-                      )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
+            ) {
+                when (selectedNodeId) {
+                    "home" -> GeneralSettings(isDebugMode) {
+                        scope.launch { userPreferences.setDebugMode(it) }
+                    }
+                    "camera" -> CameraSettings()
+                    else -> PlaceholderSettings(selectedNodeId.replaceFirstChar { it.uppercase() })
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
+@Composable
+fun GeneralSettings(isDebugMode: Boolean, onDebugModeChange: (Boolean) -> Unit) {
+    Column {
+        Text(
+            text = "General Settings",
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
 
-            // Applets Section
-            SettingsSection(title = "Applets") {
-                AppletSetting(
-                    name = "Camera",
-                    description = "Configure resolution, grid, and timer",
-                    onClick = { onNavigate("camera_settings") }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                AppletSetting(
-                    name = "Files",
-                    description = "File manager settings placeholder",
-                    onClick = { /* TODO */ }
+        SettingsSection(title = "System") {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            val date = Date(BuildConfig.BUILD_TIMESTAMP)
+            Text(
+                text = "Build Timestamp: ${dateFormat.format(date)}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Debug Mode", style = MaterialTheme.typography.bodyLarge)
+                Switch(
+                    checked = isDebugMode,
+                    onCheckedChange = onDebugModeChange
                 )
             }
         }
+    }
+}
+
+@Composable
+fun PlaceholderSettings(name: String) {
+    Column {
+        Text(
+            text = "$name Settings",
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+        Text(
+            text = "Settings for the $name applet are coming soon.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
