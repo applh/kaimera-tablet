@@ -30,26 +30,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 data class AppletItem(
     val name: String,
     val icon: ImageVector,
-    val route: String
+    val route: String,
+    val color: Color
 )
 
 @Composable
 fun LauncherScreen(onAppletSelected: (String) -> Unit) {
     val applets = listOf(
-        AppletItem("Camera", Icons.Default.PhotoCamera, "camera"),
-        AppletItem("Files", Icons.Default.Folder, "files"),
-        AppletItem("Browser", Icons.Default.Language, "browser"),
-        AppletItem("Notes", Icons.Default.EditNote, "notes"),
-        AppletItem("Downloads", Icons.Default.Download, "downloads"),
-        AppletItem("Settings", Icons.Default.Settings, "settings"),
-        AppletItem("Calendar", Icons.Default.Event, "calendar"),
-        AppletItem("Projects", Icons.AutoMirrored.Filled.Assignment, "projects")
+        AppletItem("Camera", Icons.Default.PhotoCamera, "camera", Color(0xFFD81B60)),     // Pink
+        AppletItem("Files", Icons.Default.Folder, "files", Color(0xFFFB8C00)),           // Orange
+        AppletItem("Browser", Icons.Default.Language, "browser", Color(0xFF1E88E5)),     // Blue
+        AppletItem("Notes", Icons.Default.EditNote, "notes", Color(0xFFFBC02D)),         // Yellow
+        AppletItem("Downloads", Icons.Default.Download, "downloads", Color(0xFF43A047)), // Green
+        AppletItem("Settings", Icons.Default.Settings, "settings", Color(0xFF757575)),   // Grey
+        AppletItem("Calendar", Icons.Default.Event, "calendar", Color(0xFFE53935)),      // Red
+        AppletItem("Projects", Icons.AutoMirrored.Filled.Assignment, "projects", Color(0xFF00ACC1)) // Cyan
     )
 
     Surface(
@@ -83,6 +85,7 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
                 LauncherIcon(
                     name = applet.name,
                     icon = applet.icon,
+                    color = applet.color,
                     onClick = { onAppletSelected(applet.route) }
                 )
             }
@@ -91,7 +94,7 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
 }
 
 @Composable
-fun LauncherIcon(name: String, icon: ImageVector, onClick: () -> Unit) {
+fun LauncherIcon(name: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -102,7 +105,7 @@ fun LauncherIcon(name: String, icon: ImageVector, onClick: () -> Unit) {
             modifier = Modifier.size(100.dp), // Adjust size relative to grid cell
             shape = HexagonShape(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = color
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
@@ -114,7 +117,7 @@ fun LauncherIcon(name: String, icon: ImageVector, onClick: () -> Unit) {
                     imageVector = icon,
                     contentDescription = name,
                     modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = Color.White // Ensure good contrast with colored backgrounds
                 )
             }
         }
