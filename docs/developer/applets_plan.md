@@ -93,18 +93,22 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 
 ---
 
-## 6. Projects Applet
+## 6. Projects Applet (Sprint 7.2 - v0.0.55)
 *Goal: A hierarchical project management tool for tracking complex workflows.*
 
-### MVP Features (Sprint 7.2)
+**[Detailed Design Plan](applets/projects_design.md)**
+
+### MVP Features
+- **Persistence**: Built on **Room Database** for robust relation management.
 - **Hierarchical Structure**: Organize work into Spaces -> Projects -> Tasks.
 - **Tree Panel**: Deeply nested navigation for sub-projects and categories.
-- **Task Board**: Basic Kanban or list view for task tracking.
+- **Task Board**: Basic Kanban (Todo/Doing/Done) or List view.
 - **Status Tracking**: Visual indicators for project progress.
 
 ### Future Enhancements
 - **Timeline/Gantt**: Visual representation of project schedules.
 - **Resource Linking**: Attach Notes, Files, and Calendar events to projects.
+- **Team Simulation**: Assign tasks to virtual users/roles.
 
 ---
 

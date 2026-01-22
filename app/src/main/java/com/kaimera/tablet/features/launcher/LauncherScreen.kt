@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -60,11 +61,18 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Welcome to Kaimera",
-                style = MaterialTheme.typography.displayMedium,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Welcome to Kaimera",
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
 
             HexagonalGrid(
                 items = applets,
