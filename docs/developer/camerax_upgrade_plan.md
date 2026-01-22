@@ -48,13 +48,13 @@ CameraX 1.5.0 formalized High Dynamic Range and High Frame Rate video.
     2.  Check `CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES`.
     3.  Only apply `CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE` if the device explicitly confirms support.
 
-## 5. Stabilization (Completed)
+## 5. Stabilization (Deferred)
 
-*   **Status**: ✅ Enabled Preview and Video stabilization in v0.0.25+.
+*   **Status**: ❌ Reverted. Attempted in v0.0.26 but caused critical "Blank Viewfinder" regression.
 *   **Goal**: Reduce shakiness in handheld tablet video.
 *   **Steps**:
-    1.  Enable `Preview.Builder.setPreviewStabilizationEnabled(true)` **(BLOCKED: See Known Issues)**.
-    2.  Enable `VideoCapture.Builder.setVideoStabilizationEnabled(true)`.
+    1.  Enable `Preview.Builder.setPreviewStabilizationEnabled(true)` **(BLOCKED: Critical Bug, see Known Issues)**.
+    2.  Enable `VideoCapture.Builder.setVideoStabilizationEnabled(true)` (Potential to re-enable in isolation).
     3.  Check `CameraInfo.isPreviewStabilizationSupported`.
 
 ## Implementation Order
