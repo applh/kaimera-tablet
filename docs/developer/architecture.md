@@ -12,6 +12,7 @@ The Kaimera Tablet application follows a modern, modular **Model-View-ViewModel 
   - `MainActivity.kt`: The single Activity entry point hosting the Navigation graph.
   - `CameraScreen.kt`: Composable handling the Camera UI layout.
   - `CameraScreen.kt`: Composable handling the Camera UI layout.
+  - `CameraLayouts.kt`: Implementation of the "Quad-Border Cockpit" (Top, Bottom, Side bars).
   - `CameraXViewfinder`: Native Compose viewfinder (replaced legacy PreviewView).
   - `CameraOverlays.kt`: Stateless composables for drawing visual aids (Grid, Level).
   - `LauncherScreen.kt`: The main dashboard.
@@ -80,6 +81,7 @@ app/src/main/java/com/kaimera/tablet/
 │   └── UserPreferencesRepository.kt
 ├── ui/                    // UI Composable screens
 │   ├── CameraScreen.kt
+│   ├── CameraLayouts.kt
 │   ├── CameraOverlays.kt
 │   └── LauncherScreen.kt
 └── theme/                 // App theme & styling
