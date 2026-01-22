@@ -3,7 +3,7 @@
 ## Project Identity
 - **Name**: Kaimera Tablet
 - **Target Device**: Xiaomi Pad 2 Pro
-- **Current Version**: v0.1.1 (The World Update)
+- **Current Version**: v0.0.63 (Maps Foundation)
 - **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, osmdroid 6.1.18, Room, Android SDK 35
 
 ## Architecture

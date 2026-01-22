@@ -154,10 +154,10 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **v0.0.60 (Completed)**: Projects MVP implementation with hierarchical TreePanel navigation.
 - **Inter-Applet Sync**: Deadline syncing between Projects and Calendar.
 
-## Phase 8: The World (v0.1.0 - MVP Completed)
+## Phase 8: The World (v0.0.63 - In Progress)
 *Goal: Robust mapping and geofencing capabilities.*
 
-### 8.1 Maps Applet (v0.1.0 - MVP Released)
+### 8.1 Maps Applet (v0.0.63 - Phase 1 Complete)
 - **Foundation (Completed)**: Added `osmdroid` mapping engine and registered the `MapsScreen` in launcher.
 - **Visuals (Completed)**: Interactive world map with pan and multi-touch zoom support.
 - **Location (Completed)**: Real-time user position tracking, bearing, and compass overlay.
