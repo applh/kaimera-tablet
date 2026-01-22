@@ -149,3 +149,16 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **Notes**: Markdown support and media attachments.
 - **Browser**: Multi-tab support and Bookmarks.
 - **Downloads**: Search and category-based filtering.
+
+## Phase 7: Productivity Powerhouse (v0.3.0+)
+*Goal: Deep project management and time tracking.*
+
+### 7.1 Calendar (v0.0.50)
+- **Visuals**: Modern, fluid calendar views (Month/Week).
+- **Navigation**: **Tree Panel** for managing multiple calendar sources.
+- **Interoperability**: Connect with Projects to show task deadlines.
+
+### 7.2 Projects (v0.0.55)
+- **Hierarchy**: Space -> Project -> Task management via **Tree Panel**.
+- **Execution**: Kanban boards and task lists.
+- **Synergy**: Link Files and Notes directly to specific project nodes.

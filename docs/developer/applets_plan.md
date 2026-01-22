@@ -78,6 +78,36 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 
 ---
 
+## 5. Calendar Applet
+*Goal: A centralized scheduling tool for managing events, tasks, and deadlines.*
+
+### MVP Features (Sprint 7.1)
+- **Month/Week Views**: Fluid transitions between different time scales.
+- **Event Management**: Create, edit, and delete calendar events.
+- **Tree Panel**: Navigation sidebar for switching between "Personal", "Work", and "Shared" calendars.
+- **Quick Add**: Simple interface for rapid event entry.
+
+### Future Enhancements
+- **Task Integration**: Sync with Projects applet to display deadlines.
+- **Reminders**: System notifications for upcoming events.
+
+---
+
+## 6. Projects Applet
+*Goal: A hierarchical project management tool for tracking complex workflows.*
+
+### MVP Features (Sprint 7.2)
+- **Hierarchical Structure**: Organize work into Spaces -> Projects -> Tasks.
+- **Tree Panel**: Deeply nested navigation for sub-projects and categories.
+- **Task Board**: Basic Kanban or list view for task tracking.
+- **Status Tracking**: Visual indicators for project progress.
+
+### Future Enhancements
+- **Timeline/Gantt**: Visual representation of project schedules.
+- **Resource Linking**: Attach Notes, Files, and Calendar events to projects.
+
+---
+
 ## Agile Roadmap: Phase 5 & 6
 
 ### Phase 5: Multi-Utility Expansion (v0.1.0+)
@@ -91,3 +121,8 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **Deep Linking**: Allow applets to transition between each other (e.g., Camera -> Notes for logging).
 - **Unified Search**: Search across Browser history, Downloads, and Notes from the Launcher.
 - **Cloud Sync**: Optional background syncing for Notes and Bookmarks.
+
+### Phase 7: Productivity Powerhouse (v0.3.0+)
+- **v0.0.50**: Calendar MVP implementation.
+- **v0.0.55**: Projects MVP implementation with hierarchical TreePanel navigation.
+- **Inter-Applet Sync**: Deadline syncing between Projects and Calendar.

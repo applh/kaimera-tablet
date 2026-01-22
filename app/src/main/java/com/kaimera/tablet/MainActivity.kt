@@ -25,6 +25,8 @@ import com.kaimera.tablet.features.files.viewer.MediaViewerScreen
 import com.kaimera.tablet.features.browser.BrowserScreen
 import com.kaimera.tablet.features.notes.NotesScreen
 import com.kaimera.tablet.features.downloads.DownloadsScreen
+import com.kaimera.tablet.features.calendar.CalendarScreen
+import com.kaimera.tablet.features.projects.ProjectsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
@@ -111,6 +113,12 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("downloads") {
                             DownloadsScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("calendar") {
+                            CalendarScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("projects") {
+                            ProjectsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }

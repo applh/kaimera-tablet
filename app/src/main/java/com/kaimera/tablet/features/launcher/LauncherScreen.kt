@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
@@ -96,6 +98,23 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
                     name = "Settings",
                     icon = Icons.Default.Settings,
                     onClick = { onAppletSelected("settings") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                LauncherIcon(
+                    name = "Calendar",
+                    icon = Icons.Default.Event,
+                    onClick = { onAppletSelected("calendar") }
+                )
+                LauncherIcon(
+                    name = "Projects",
+                    icon = Icons.Default.Assignment,
+                    onClick = { onAppletSelected("projects") }
                 )
             }
         }
