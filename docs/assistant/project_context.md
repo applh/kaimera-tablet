@@ -12,17 +12,19 @@
     - `LauncherScreen`: Entry point, grid of icons.
     - `CameraScreen`: CameraX-based capture interface with Pro features.
     - `SettingsScreen`: App-wide and applet-specific settings.
-    - `CameraSettings`: Configuration for Camera applet.
-    - `FilesScreen`: Gallery grid view using Coil for image loading.
+    - `FilesScreen`: Media management with hierarchical **Tree Panel**.
+    - `NotesScreen`: Distraction-free editor with hierarchical **Tree Panel**.
+    - `TreePanel`: Reusable hierarchical navigation sidebar.
   
 ## Key Files
 - `app/src/main/java/com/kaimera/tablet/MainActivity.kt`: Navigation entry.
-- `app/src/main/java/com/kaimera/tablet/ui/LauncherScreen.kt`: Main menu.
-- `app/src/main/java/com/kaimera/tablet/ui/CameraScreen.kt`: Main Camera UI.
-- `app/src/main/java/com/kaimera/tablet/ui/CameraLayouts.kt`: Quad-Border Cockpit components.
-- `app/src/main/java/com/kaimera/tablet/camera/CameraManager.kt`: CameraX logic controller.
-- `app/src/main/java/com/kaimera/tablet/ui/CameraOverlays.kt`: Camera overlay drawing logic.
-- `app/src/main/java/com/kaimera/tablet/files/`: Files/Gallery implementation.
+- `app/src/main/java/com/kaimera/tablet/features/launcher/LauncherScreen.kt`: Main menu.
+- `app/src/main/java/com/kaimera/tablet/features/camera/CameraScreen.kt`: Main Camera UI.
+- `app/src/main/java/com/kaimera/tablet/features/camera/CameraLayouts.kt`: Adaptive layout strategies.
+- `app/src/main/java/com/kaimera/tablet/features/camera/CameraManager.kt`: CameraX logic controller.
+- `app/src/main/java/com/kaimera/tablet/features/files/FilesScreen.kt`: Files applet with sidebar.
+- `app/src/main/java/com/kaimera/tablet/features/notes/NotesScreen.kt`: Notes applet with sidebar.
+- `app/src/main/java/com/kaimera/tablet/core/ui/components/TreePanel.kt`: Reusable tree component.
 - `app/build.gradle.kts`: Dependency management (includes CameraX, Coil).
 
 ## Environment Quirks

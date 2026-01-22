@@ -56,9 +56,25 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 
 ### Future Enhancements
 - **Markdown Support**: Rich text formatting using Markdown syntax.
-- **Folders/Tags**: Organize notes into categories.
+- **Folders/Tags**: Organize notes into categories via a hierarchical **Tree Panel**.
 - **Attachments**: Link photos from the Camera or files from the Files applet.
 - **Export**: Share notes as PDF or plain text.
+
+---
+
+## 4. Files Applet
+*Goal: A comprehensive file manager for organizing documents, media, and system files.*
+
+### MVP Features (Sprint 5.4)
+- **File Explorer**: Browse local storage with list and grid views.
+- **Tree Panel**: Collapsible sidebar for hierarchical folder navigation.
+- **Dynamic Operations**: Rename, Delete, and Move actions.
+- **Media Preview**: Integrated thumbnails for images and videos.
+
+### Future Enhancements
+- **Cloud Integration**: Access Google Drive, Dropbox, and S3.
+- **Archive Support**: Compression and extraction of ZIP/RAR files.
+- **Advanced Search**: Metadata-based filtering.
 
 ---
 
@@ -71,6 +87,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **v0.0.40**: Notes MVP implementation.
 
 ### Phase 6: System Synergy (v0.2.0+)
+- **Hierarchical Tree Component**: Unified navigation panel for Files and Notes (v0.0.42).
 - **Deep Linking**: Allow applets to transition between each other (e.g., Camera -> Notes for logging).
 - **Unified Search**: Search across Browser history, Downloads, and Notes from the Launcher.
 - **Cloud Sync**: Optional background syncing for Notes and Bookmarks.

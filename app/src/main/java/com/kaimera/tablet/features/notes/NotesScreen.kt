@@ -9,6 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.kaimera.tablet.core.ui.components.TreeNode
+import com.kaimera.tablet.core.ui.components.TreePanel
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Note
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Star
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,19 +39,43 @@ fun NotesScreen(onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        TextField(
-            value = noteText,
-            onValueChange = { noteText = it },
+        val treeNodes = remember {
+            listOf(
+                TreeNode("root", "My Notes", Icons.Default.Description, children = listOf(
+                    TreeNode("personal", "Personal", Icons.Default.Label),
+                    TreeNode("work", "Work", Icons.Default.Label),
+                    TreeNode("ideas", "Ideas", Icons.Default.Note)
+                )),
+                TreeNode("archive", "Archive", Icons.Default.History),
+                TreeNode("trash", "Trash", Icons.Default.Star)
+            )
+        }
+        var selectedNodeId by remember { mutableStateOf("personal") }
+
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            placeholder = { Text("Start typing...") },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.background,
-                unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                .padding(padding)
+        ) {
+            TreePanel(
+                nodes = treeNodes,
+                selectedNodeId = selectedNodeId,
+                onNodeSelected = { selectedNodeId = it.id },
+                modifier = Modifier.width(200.dp)
             )
-        )
+
+            TextField(
+                value = noteText,
+                onValueChange = { noteText = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Start typing...") },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+        }
     }
 }

@@ -89,7 +89,7 @@ Focus on creating flexible, screen-agnostic user interfaces that adapt to variou
 
 2.  **Flexible Layouts**:
     - Prefer `FlowRow`, `LazyVerticalGrid`, or responsive `Row/Column` combinations over static layouts.
-    - Implement "Sliding Panes" or "Master-Detail" flows for larger screens using `BoxWithConstraints` to toggle between list/detail views and side-by-side views.
+    - Implement "Sliding Panes" or "Master-Detail" flows for larger screens using `BoxWithConstraints` or the hierarchical **`TreePanel`** component (located in `core.ui.components`) to toggle between list/detail views and side-by-side views.
 
 3.  **Density Independence**:
     - Use scalable units (`sp` for text).

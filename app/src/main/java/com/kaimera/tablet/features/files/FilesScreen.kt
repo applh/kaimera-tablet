@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -53,6 +54,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.kaimera.tablet.core.ui.components.TreeNode
+import com.kaimera.tablet.core.ui.components.TreePanel
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Star
 
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -92,41 +100,61 @@ fun FilesScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentAlignment = Alignment.Center
-    ) {
-        when (val state = uiState) {
-            is FilesUiState.Loading -> {
-                CircularProgressIndicator()
-            }
-            is FilesUiState.Success -> {
-                if (state.media.isEmpty()) {
-                    Text(
-                        text = "No images found",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 120.dp),
-                        contentPadding = PaddingValues(4.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(state.media) { media ->
-                            MediaItem(
-                                media = media,
-                                onOpen = { onFileOpen(media) },
-                                onDelete = { viewModel.deleteFile(media) },
-                                onRename = { newName -> viewModel.renameFile(media, newName) }
-                            )
+    val treeNodes = remember {
+        listOf(
+            TreeNode("all", "All Files", Icons.Default.FolderOpen),
+            TreeNode("photos", "Photos", Icons.Default.Image),
+            TreeNode("videos", "Videos", Icons.Default.VideoLibrary),
+            TreeNode("recent", "Recent", Icons.Default.History),
+            TreeNode("favorites", "Favorites", Icons.Default.Star)
+        )
+    }
+    var selectedNodeId by remember { mutableStateOf("all") }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        TreePanel(
+            nodes = treeNodes,
+            selectedNodeId = selectedNodeId,
+            onNodeSelected = { selectedNodeId = it.id },
+            modifier = Modifier.width(240.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .statusBarsPadding(),
+            contentAlignment = Alignment.Center
+        ) {
+            when (val state = uiState) {
+                is FilesUiState.Loading -> {
+                    CircularProgressIndicator()
+                }
+                is FilesUiState.Success -> {
+                    if (state.media.isEmpty()) {
+                        Text(
+                            text = "No images found",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 120.dp),
+                            contentPadding = PaddingValues(4.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(state.media) { media ->
+                                MediaItem(
+                                    media = media,
+                                    onOpen = { onFileOpen(media) },
+                                    onDelete = { viewModel.deleteFile(media) },
+                                    onRename = { newName -> viewModel.renameFile(media, newName) }
+                                )
+                            }
                         }
                     }
                 }
-            }
-            is FilesUiState.Error -> {
-                Text(text = "Error: ${state.message}")
+                is FilesUiState.Error -> {
+                    Text(text = "Error: ${state.message}")
+                }
             }
         }
     }

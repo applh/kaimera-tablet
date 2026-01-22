@@ -141,7 +141,8 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - Launcher-level search that queries across Browser history, Downloads, and Notes.
 
 ### 6.2 Advanced Productivity
-- **Files**: Robust "Rename" feature with scoped storage permission handling (v0.0.37).
+- **Files (v0.0.37)**: Robust "Rename" feature with scoped storage permission handling.
+- **Tree Panel (v0.0.42)**: New hierarchical navigation component implemented for both **Files** and **Notes** applets to manage deep subdirectory structures.
 - **Core (v0.0.38)**: 
     - **APK Optimization**: Reduced debug size by 50% (131MB -> 66MB) via ABI filtering and Play Services ML Kit.
     - **AI Scene Fix**: Resolved async frame lifecycle bugs and enabled auto-model downloading.
