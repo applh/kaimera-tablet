@@ -89,6 +89,12 @@ class CameraManager @Inject constructor(@ApplicationContext private val context:
     private val _detectedScene = MutableStateFlow<String?>(null)
     val detectedScene: StateFlow<String?> = _detectedScene.asStateFlow()
 
+    private val _rawDetectedLabel = MutableStateFlow<String?>(null)
+    val rawDetectedLabel: StateFlow<String?> = _rawDetectedLabel.asStateFlow()
+
+    private val _detectedConfidence = MutableStateFlow(0f)
+    val detectedConfidence: StateFlow<Float> = _detectedConfidence.asStateFlow()
+
     private var imageAnalysis: ImageAnalysis? = null
     
     // Timelapse State
@@ -361,23 +367,22 @@ class CameraManager @Inject constructor(@ApplicationContext private val context:
 
     private fun setupImageAnalysis(scanQrCodes: Boolean, aiSceneDetection: Boolean) {
         if (scanQrCodes || aiSceneDetection) {
-            val qrAnalyzer = if (scanQrCodes) QrCodeAnalyzer { qrCode -> 
-                _detectedQrCode.value = qrCode 
-            } else null
-            
-            val sceneAnalyzer = if (aiSceneDetection) SceneAnalyzer { scene -> 
-                _detectedScene.value = scene 
-            } else null
+            val unifiedAnalyzer = UnifiedCameraAnalyzer(
+                scanQrCodes = scanQrCodes,
+                aiSceneDetection = aiSceneDetection,
+                onQrCodeDetected = { qrCode -> _detectedQrCode.value = qrCode },
+                onSceneDetected = { scene, raw, conf ->
+                    _detectedScene.value = scene
+                    _rawDetectedLabel.value = raw
+                    _detectedConfidence.value = conf
+                }
+            )
             
             imageAnalysis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also {
-                    it.setAnalyzer(cameraExecutor) { imageProxy ->
-                        qrAnalyzer?.analyze(imageProxy)
-                        sceneAnalyzer?.analyze(imageProxy)
-                        imageProxy.close()
-                    }
+                    it.setAnalyzer(cameraExecutor, unifiedAnalyzer)
                 }
         } else {
             imageAnalysis = null

@@ -282,6 +282,8 @@ fun CameraContent(
     val timelapseFrames by cameraManager.timelapseFrames.collectAsState()
     val detectedQrCode by cameraManager.detectedQrCode.collectAsState()
     val detectedScene by cameraManager.detectedScene.collectAsState()
+    val rawDetectedLabel by cameraManager.rawDetectedLabel.collectAsState()
+    val detectedConfidence by cameraManager.detectedConfidence.collectAsState()
     
     // View State (for dynamic rebinding)
     val surfaceRequest by cameraManager.surfaceRequest.collectAsState()
@@ -738,6 +740,9 @@ fun CameraContent(
 
                      Text("Lens: $lensFacing", color = Color.White)
                      Text("Ext: $extensionMode (Sup: ${supportedExtensions.size})", color = Color.White)
+                     if (aiSceneDetection) {
+                         Text("AI: ${rawDetectedLabel ?: "Searching..."} (${(detectedConfidence * 100).toInt()}%)", color = Color.Cyan, fontWeight = FontWeight.Bold)
+                     }
                  }
              }
         }

@@ -142,6 +142,9 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 
 ### 6.2 Advanced Productivity
 - **Files**: Robust "Rename" feature with scoped storage permission handling (v0.0.37).
+- **Core (v0.0.38)**: 
+    - **APK Optimization**: Reduced debug size by 50% (131MB -> 66MB) via ABI filtering and Play Services ML Kit.
+    - **AI Scene Fix**: Resolved async frame lifecycle bugs and enabled auto-model downloading.
 - **Notes**: Markdown support and media attachments.
 - **Browser**: Multi-tab support and Bookmarks.
 - **Downloads**: Search and category-based filtering.
