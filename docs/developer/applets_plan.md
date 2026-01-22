@@ -112,6 +112,25 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 
 ---
 
+## 7. Maps Applet (Sprint 8.1 - v0.1.0)
+*Goal: A comprehensive mapping and navigation tool using OpenStreetMap.*
+
+**[Detailed Design Plan](applets/maps_design.md)**
+
+### MVP Features
+- **Map View**: Full-screen interactive map (osmdroid).
+- **Location**: "My Location" tracking and compass mode.
+- **Tree Panel**: "My Places" management (Favorites, History).
+- **Offline Capable**: Tile caching for basic offline usage.
+
+### Future Enhancements
+- **Navigation**: Turn-by-turn directions.
+- **Offline Regions**: Downloadable map packs.
+- **POIs**: rich point-of-interest data.
+
+---
+
+
 ## Agile Roadmap: Phase 5 & 6
 
 ### Phase 5: Multi-Utility Expansion (v0.1.0+)
@@ -130,3 +149,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **v0.0.50**: Calendar MVP implementation.
 - **v0.0.55**: Projects MVP implementation with hierarchical TreePanel navigation.
 - **Inter-Applet Sync**: Deadline syncing between Projects and Calendar.
+
+### Phase 8: The World (v0.1.0+)
+- **v0.1.0**: Maps Applet MVP (osmdroid integration).
+- **Geotagging**: Attach Locations to Notes and Photos.

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
@@ -51,7 +52,8 @@ fun LauncherScreen(onAppletSelected: (String) -> Unit) {
         AppletItem("Downloads", Icons.Default.Download, "downloads", Color(0xFF43A047)), // Green
         AppletItem("Settings", Icons.Default.Settings, "settings", Color(0xFF757575)),   // Grey
         AppletItem("Calendar", Icons.Default.Event, "calendar", Color(0xFFE53935)),      // Red
-        AppletItem("Projects", Icons.AutoMirrored.Filled.Assignment, "projects", Color(0xFF00ACC1)) // Cyan
+        AppletItem("Projects", Icons.AutoMirrored.Filled.Assignment, "projects", Color(0xFF00ACC1)), // Cyan
+        AppletItem("Maps", Icons.Default.Map, "maps", Color(0xFF689F38)) // Light Green
     )
 
     Surface(

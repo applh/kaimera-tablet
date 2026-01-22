@@ -3,8 +3,8 @@
 ## Project Identity
 - **Name**: Kaimera Tablet
 - **Target Device**: Xiaomi Pad 2 Pro
-- **Current Version**: v0.0.60 (Projects MVP)
-- **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, Android SDK 34 (UpsideDownCake)
+- **Current Version**: v0.0.63 (Maps Foundation)
+- **Tech Stack**: Kotlin, Jetpack Compose, CameraX 1.5.2, osmdroid 6.1.18, Android SDK 35 (VanillaIceCream)
 
 ## Architecture
 - **Single Activity**: `MainActivity` hosts the `NavHost`.
@@ -17,6 +17,7 @@
     - `NotesScreen`: Distraction-free editor with hierarchical **Tree Panel**.
     - `TreePanel`: Reusable hierarchical navigation sidebar.
     - `ProjectsScreen`: Hierarchical Project Management with Room Persistence.
+    - `MapsScreen`: OpenStreetMap-based interactive map using `osmdroid`.
 
 ## Key Files
 - `app/src/main/java/com/kaimera/tablet/MainActivity.kt`: Navigation entry.
@@ -24,8 +25,9 @@
 - `app/src/main/java/com/kaimera/tablet/features/projects/ProjectsScreen.kt`: Projects UI.
 - `app/src/main/java/com/kaimera/tablet/data/local/ProjectsDatabase.kt`: Room Database definition.
 - `app/src/main/java/com/kaimera/tablet/data/repository/ProjectRepository.kt`: Data access layer.
+- `app/src/main/java/com/kaimera/tablet/features/maps/MapsScreen.kt`: OpenStreetMap view.
 - `app/src/main/java/com/kaimera/tablet/core/ui/components/TreePanel.kt`: Reusable tree component.
-- `app/build.gradle.kts`: Dependency management (includes CameraX, Coil, Room).
+- `app/build.gradle.kts`: Dependency management (includes CameraX, osmdroid, Coil, Room).
 
 ## Environment Quirks
 - **JDK 17 STRICT**: System may have JDK 25 (incompatible). Always explicitly set `JAVA_HOME` to JDK 17 path.

@@ -151,20 +151,17 @@ Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fi
 - **Browser**: Multi-tab support and Bookmarks.
 - **Downloads**: Search and category-based filtering.
 
-## Phase 7: Productivity Powerhouse (v0.3.0+)
-*Goal: Deep project management and time tracking.*
+- **v0.0.60 (Completed)**: Projects MVP implementation with hierarchical TreePanel navigation.
+- **Inter-Applet Sync**: Deadline syncing between Projects and Calendar.
 
-### 7.1 Calendar (v0.0.50)
-- **Visuals**: Modern, fluid calendar views (Month/Week).
-- **Navigation**: **Tree Panel** for managing multiple calendar sources.
-- **Interoperability**: Connect with Projects to show task deadlines.
+## Phase 8: The World (v0.1.0+ - In Progress)
+*Goal: Robust mapping and geofencing capabilities.*
 
-### 7.2 Projects (v0.0.60 - MVP Completed)
-- **Hierarchy (Completed)**: Space -> Project -> Task management via **Tree Panel**.
-- **Execution (Completed)**: Kanban boards and task lists.
-- **Synergy (Completed)**: Link Files and Notes directly to specific project nodes.
-- **Visuals (Completed)**: Dashboards, filters, and team assignment simulation.
+### 8.1 Maps Applet (v0.0.63 - Phase A Completed)
+- **Foundation (Completed)**: Added `osmdroid` mapping engine and registered the `MapsScreen` in launcher.
+- **Visuals (Completed)**: Interactive world map with pan and multi-touch zoom support.
 
 ## Future Phases
 - **Cloud Sync**: Integrate with Kaimera Cloud for multi-device support.
 - **Notification Center**: System-wide alerts for deadlines and assignments.
+

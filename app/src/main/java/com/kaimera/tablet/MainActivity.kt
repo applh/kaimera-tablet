@@ -27,6 +27,7 @@ import com.kaimera.tablet.features.notes.NotesScreen
 import com.kaimera.tablet.features.downloads.DownloadsScreen
 import com.kaimera.tablet.features.calendar.CalendarScreen
 import com.kaimera.tablet.features.projects.ProjectsScreen
+import com.kaimera.tablet.features.maps.MapsScreen
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
@@ -121,6 +122,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("projects") {
                             ProjectsScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("maps") {
+                            MapsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
