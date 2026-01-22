@@ -120,35 +120,52 @@ Adopt a **Hybrid Approach**: Use Material 3 for velocity and accessibility, but 
 2.  **Developer Guide** (`docs/developer/`): Update if build requirements, dependencies, or scripts change.
 3.  **Project Context** (`docs/assistant/`): Update if architecture, key files, or quirks change. This ensures future AI sessions remain efficient.
 
-### Architecture & Design Patterns
+### Architecture & Standards (Feature-Based & DI)
 
-We follow the standard **Model-View-ViewModel (MVVM)** architecture with the **Repository Pattern**.
+We follow **MVVM** with **Hilt Dependency Injection** and **Feature-Based Packaging**.
 
-### Senior Standards
-1.  **SOLID Principles**: Strictly enforce SRP (e.g., `CameraManager` vs `CameraScreen`).
-2.  **Defensive Programming**: Handle nulls, exceptions, and lifecycle states explicitly.
-3.  **Performance**: Monitor recompositions and memory leaks (especially with Camera/Bitmaps).
-4.  **State Management**:
-    - **Single Source of Truth**: Use `Repositories` and `DataStore`. Never hold business state in Views.
-    - **Reactive**: Use `StateFlow` and `collectAsStateWithLifecycle`.
+1.  **Feature-Based Structure**: Group all files related to a feature together.
+    - `com.kaimera.tablet.features.<feature_name>`
+    - Contains: `Screen.kt`, `ViewModel.kt`, `FeatureSpecificUtils.kt`.
+2.  **Core Package**: Shared code belongs in `com.kaimera.tablet.core`.
+    - `core.data`: Repositories used by multiple features.
+    - `core.ui`: Theme, Common UI components.
+    - `core.di`: Hilt Modules for shared providers.
+3.  **Hilt Dependency Injection**:
+    - Annotate `Application` class with `@HiltAndroidApp`.
+    - Annotate `MainActivity` with `@AndroidEntryPoint`.
+    - Use `@HiltViewModel` for ViewModels and constructor injection for Repositories.
+    - Use `hiltViewModel()` in Composables for scoped injection.
 
-1.  **Screen (View)**: Composable functions (in `ui/` packages) that observe the `ViewModel`.
-2.  **ViewModel**: Manages UI state (using `StateFlow`) and business logic.
-3.  **Repository**: Abstracts data sources (API, Database).
+#### Scaffolding New Features (Applets)
+To create a new applet (e.g., "Calendar"), follow these steps:
 
-#### Scaffolding New Features
-Use the scaffolding script to generate standard boilerplate for a new feature:
+1.  **Generate Scaffold**:
+    ```bash
+    .agent/skills/AndroidDevelopment/scripts/scaffold_feature.sh "Calendar"
+    ```
+2.  **Define Route**: In `MainActivity.kt`, add the new route to the `NavHost`.
+    ```kotlin
+    composable("calendar") { CalendarScreen(onBack = { navController.popBackStack() }) }
+    ```
+3.  **Add to Launcher**: In `LauncherScreen.kt`, add a new `LauncherIcon` call.
+    ```kotlin
+    LauncherIcon(name = "Calendar", icon = Icons.Default.Event, onClick = { onAppletSelected("calendar") })
+    ```
+4.  **Hilt Provision**: If the new feature requires a repository, ensure it is provided in a Hilt `@Module` or annotated with `@Inject constructor`.
 
-```bash
-.agent/skills/AndroidDevelopment/scripts/scaffold_feature.sh "FeatureName"
-```
+### Developer Mindset: The Kaimera Way
+As a developer on Kaimera Tablet, you are building more than an app; you are building an *ecosystem*.
 
-This will create:
-- `FeatureNameScreen.kt`
-- `FeatureNameViewModel.kt`
-- `FeatureNameRepository.kt`
+- **Composition over Inheritance**: Use Compose's strength to build small, testable UI pieces.
+- **Dependency Inversion**: Always depend on abstractions (interfaces) rather than implementations.
+- **Performance**: Android tablets may have constrained resources. Use `remember` and `derivedStateOf` effectively to minimize Recomposition.
+- **Visual WOW**: Every applet should adhere to the high-aesthetic standards of the Kaimera UI (Gradients, Glassmorphism, Neon accents).
 
-Make sure to register the new Screen in `MainActivity.kt` navigation.
+### Senior Standards (Updated)
+1.  **Hilt for DI**: No more manual instantiation of Repositories in Activities/Screens.
+2.  **StateFlow & UDF**: Use `collectAsStateWithLifecycle()` for robust state observation.
+3.  **Modular Navigation**: Define navigation routes as constants or objects within their respective feature packages.
 
 ### Release Workflow
 To cleanup, update documentation/skills, commit, and tag a release in one step, use the provided script:

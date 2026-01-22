@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui.theme
+package com.kaimera.tablet.core.ui.theme
 
 import android.app.Activity
 import android.os.Build

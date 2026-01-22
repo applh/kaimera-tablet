@@ -1,4 +1,4 @@
-package com.kaimera.tablet.data
+package com.kaimera.tablet.core.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -9,9 +9,13 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
-class UserPreferencesRepository(private val context: Context) {
+@Singleton
+class UserPreferencesRepository @Inject constructor(private val context: Context) {
 
     companion object {
         val KEY_GRID_ROWS = intPreferencesKey("grid_rows")

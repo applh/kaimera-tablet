@@ -1,4 +1,4 @@
-package com.kaimera.tablet.files
+package com.kaimera.tablet.features.files
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -8,7 +8,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class FilesViewModel(
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
+@HiltViewModel
+class FilesViewModel @Inject constructor(
     private val repository: FilesRepository
 ) : ViewModel() {
 

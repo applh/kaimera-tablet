@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui.theme
+package com.kaimera.tablet.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

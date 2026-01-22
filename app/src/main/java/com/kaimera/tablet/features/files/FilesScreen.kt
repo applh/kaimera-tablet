@@ -1,4 +1,4 @@
-package com.kaimera.tablet.files
+package com.kaimera.tablet.features.files
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,19 +54,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
-fun FilesScreen(onFileOpen: (MediaFile) -> Unit = {}) {
+fun FilesScreen(
+    onFileOpen: (MediaFile) -> Unit = {},
+    viewModel: FilesViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
-    val viewModel: FilesViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                if (modelClass.isAssignableFrom(FilesViewModel::class.java)) {
-                    return FilesViewModel(FilesRepositoryImpl(context)) as T
-                }
-                throw IllegalArgumentException("Unknown ViewModel class")
-            }
-        }
-    )
 
     val uiState by viewModel.uiState.collectAsState()
     val actionEffect by viewModel.actionEffect.collectAsState()

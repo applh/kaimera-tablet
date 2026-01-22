@@ -114,3 +114,31 @@ When `min(width, height) < 400dp`, automatically hide auxiliary controls (Focus 
 **Effect**: High (for Pro users)
 **Effort**: Low
 Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fit" (Accurate Framing). This is crucial for floating windows where the window aspect ratio rarely matches the sensor aspect ratio (4:3).
+
+---
+
+## Phase 5: Multi-Utility Expansion (v0.1.0 - In Progress)
+*Goal: Expand the tablet's capabilities with essential productivity and utility applets.*
+
+### 5.1 Browser Applet (v0.0.29 - MVP Stub)
+- **MVP (Completed)**: Address bar, WebView integration, basic navigation controls (Back/Forward/Refresh).
+- **Integration**: Ability to hand off file downloads to the Downloads applet.
+
+### 5.2 Downloads Applet (v0.0.29 - MVP Stub)
+- **MVP (Completed)**: List of downloaded files with "Open" and "Delete" actions.
+- **Visuals**: Storage usage indicator and file type icons.
+
+### 5.3 Notes Applet (v0.0.29 - MVP Stub)
+- **MVP (Completed)**: Simple text-based notes with auto-save and local search.
+- **UI**: Minimalist, typography-focused "distraction-free" editor.
+
+## Phase 6: System Synergy (v0.2.0+)
+*Goal: Inter-applet communication and advanced features.*
+
+### 6.1 Unified Search
+- Launcher-level search that queries across Browser history, Downloads, and Notes.
+
+### 6.2 Advanced Productivity
+- **Notes**: Markdown support and media attachments.
+- **Browser**: Multi-tab support and Bookmarks.
+- **Downloads**: Search and category-based filtering.

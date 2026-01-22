@@ -1,9 +1,11 @@
-package com.kaimera.tablet.files
+package com.kaimera.tablet.features.files
 
 import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import javax.inject.Inject
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 data class MediaFile(
     val uri: Uri,
@@ -22,7 +24,7 @@ interface FilesRepository {
     suspend fun renameFile(uri: Uri, newName: String): Boolean
 }
 
-class FilesRepositoryImpl(private val context: Context) : FilesRepository {
+class FilesRepositoryImpl @Inject constructor(@ApplicationContext private val context: Context) : FilesRepository {
     override suspend fun getMedia(): List<MediaFile> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val mediaList = mutableListOf<MediaFile>()
         

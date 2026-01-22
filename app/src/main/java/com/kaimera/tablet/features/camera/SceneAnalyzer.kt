@@ -1,4 +1,4 @@
-package com.kaimera.tablet.camera
+package com.kaimera.tablet.features.camera
 
 import android.util.Log
 import androidx.camera.core.ExperimentalGetImage

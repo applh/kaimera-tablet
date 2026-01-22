@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui
+package com.kaimera.tablet.features.files.viewer
 
 import android.net.Uri
 import android.widget.MediaController

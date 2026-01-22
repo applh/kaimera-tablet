@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui
+package com.kaimera.tablet.features.camera
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

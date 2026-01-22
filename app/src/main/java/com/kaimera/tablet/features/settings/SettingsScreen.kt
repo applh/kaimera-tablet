@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui
+package com.kaimera.tablet.features.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,14 +29,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
-import com.kaimera.tablet.data.UserPreferencesRepository
+import com.kaimera.tablet.core.data.UserPreferencesRepository
 import kotlinx.coroutines.launch
 
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
-fun SettingsScreen(onNavigate: (String) -> Unit = {}) {
-    val context = LocalContext.current
+fun SettingsScreen(
+    onNavigate: (String) -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val scope = rememberCoroutineScope()
-    val userPreferences = remember { UserPreferencesRepository(context) }
+    val userPreferences = viewModel.userPreferences
     val isDebugMode by userPreferences.isDebugMode.collectAsState(initial = false)
 
     Surface(

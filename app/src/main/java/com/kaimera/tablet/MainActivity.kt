@@ -12,22 +12,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.kaimera.tablet.ui.theme.KaimeraTabletTheme
+import com.kaimera.tablet.core.ui.theme.KaimeraTabletTheme
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kaimera.tablet.ui.CameraScreen
-import com.kaimera.tablet.ui.LauncherScreen
-import com.kaimera.tablet.ui.SettingsScreen
-import com.kaimera.tablet.files.FilesScreen
+import com.kaimera.tablet.features.camera.CameraScreen
+import com.kaimera.tablet.features.launcher.LauncherScreen
+import com.kaimera.tablet.features.settings.SettingsScreen
+import com.kaimera.tablet.features.files.FilesScreen
+import com.kaimera.tablet.features.files.viewer.MediaViewerScreen
+import com.kaimera.tablet.features.browser.BrowserScreen
+import com.kaimera.tablet.features.notes.NotesScreen
+import com.kaimera.tablet.features.downloads.DownloadsScreen
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.kaimera.tablet.ui.MediaViewerScreen
 import coil.ImageLoader
 import coil.decode.VideoFrameDecoder
 import coil.Coil
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,7 +101,16 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable("camera_settings") {
-                            com.kaimera.tablet.ui.CameraSettings()
+                            com.kaimera.tablet.features.camera.CameraSettings()
+                        }
+                        composable("browser") {
+                            BrowserScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("notes") {
+                            NotesScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("downloads") {
+                            DownloadsScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }

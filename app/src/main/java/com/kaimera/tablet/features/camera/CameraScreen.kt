@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui
+package com.kaimera.tablet.features.camera
 
 import android.Manifest
 import android.content.ContentValues
@@ -111,7 +111,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.kaimera.tablet.data.UserPreferencesRepository
+import com.kaimera.tablet.core.data.UserPreferencesRepository
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.delay
@@ -125,16 +125,21 @@ import androidx.camera.video.MediaStoreOutputOptions
 import androidx.core.util.Consumer
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.extensions.ExtensionMode
-import com.kaimera.tablet.camera.CameraManager
+// CameraManager is now in the same package, so no need for import
+
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
+fun CameraScreen(
+    onNavigateToGallery: () -> Unit = {},
+    viewModel: CameraViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    val userPreferences = remember { UserPreferencesRepository(context) }
-
+    val userPreferences = viewModel.userPreferences
+    val cameraManager = viewModel.cameraManager
     val gridRows by userPreferences.gridRows.collectAsState(initial = 2)
     val gridCols by userPreferences.gridCols.collectAsState(initial = 2)
     val timerSeconds by userPreferences.timerSeconds.collectAsState(initial = 0)
@@ -165,7 +170,6 @@ fun CameraScreen(onNavigateToGallery: () -> Unit = {}) {
     }
 
     if (permissionsState.allPermissionsGranted) {
-        val cameraManager = remember { CameraManager(context) }
         CameraContent(
             context = context,
             lifecycleOwner = lifecycleOwner,
@@ -275,7 +279,6 @@ fun CameraContent(
     val maxZoomRatio by cameraManager.maxZoomState.collectAsState()
     val isRecording by cameraManager.isRecording.collectAsState()
     val isPaused by cameraManager.isPaused.collectAsState()
-    val isTimelapseActive by cameraManager.isTimelapseActive.collectAsState()
     val timelapseFrames by cameraManager.timelapseFrames.collectAsState()
     val detectedQrCode by cameraManager.detectedQrCode.collectAsState()
     val detectedScene by cameraManager.detectedScene.collectAsState()

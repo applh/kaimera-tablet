@@ -1,4 +1,4 @@
-package com.kaimera.tablet.ui
+package com.kaimera.tablet.features.camera
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.kaimera.tablet.data.UserPreferencesRepository
+import com.kaimera.tablet.core.data.UserPreferencesRepository
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.camera.core.CameraSelector
@@ -35,11 +35,15 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+import androidx.hilt.navigation.compose.hiltViewModel
+
 @Composable
-fun CameraSettings() {
+fun CameraSettings(
+    viewModel: CameraViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val userPreferences = UserPreferencesRepository(context)
+    val userPreferences = viewModel.userPreferences
 
     val gridRows by userPreferences.gridRows.collectAsState(initial = 0)
     val gridCols by userPreferences.gridCols.collectAsState(initial = 0)

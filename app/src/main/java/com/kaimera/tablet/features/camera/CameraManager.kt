@@ -1,4 +1,4 @@
-package com.kaimera.tablet.camera
+package com.kaimera.tablet.features.camera
 
 import android.content.ContentValues
 import android.content.Context
@@ -28,7 +28,12 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class CameraManager(private val context: Context) {
+import javax.inject.Inject
+import javax.inject.Singleton
+import dagger.hilt.android.qualifiers.ApplicationContext
+
+@Singleton
+class CameraManager @Inject constructor(@ApplicationContext private val context: Context) {
 
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var cameraProvider: ProcessCameraProvider? = null
@@ -356,11 +361,11 @@ class CameraManager(private val context: Context) {
 
     private fun setupImageAnalysis(scanQrCodes: Boolean, aiSceneDetection: Boolean) {
         if (scanQrCodes || aiSceneDetection) {
-            val qrAnalyzer = if (scanQrCodes) com.kaimera.tablet.camera.QrCodeAnalyzer { qrCode -> 
+            val qrAnalyzer = if (scanQrCodes) QrCodeAnalyzer { qrCode -> 
                 _detectedQrCode.value = qrCode 
             } else null
             
-            val sceneAnalyzer = if (aiSceneDetection) com.kaimera.tablet.camera.SceneAnalyzer { scene -> 
+            val sceneAnalyzer = if (aiSceneDetection) SceneAnalyzer { scene -> 
                 _detectedScene.value = scene 
             } else null
             

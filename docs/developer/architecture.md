@@ -5,46 +5,43 @@ The Kaimera Tablet application follows a modern, modular **Model-View-ViewModel 
 
 ## Architectural Layers
 
-### 1. UI Layer (View)
-- **Technology**: Jetpack Compose
-- **Responsibility**: Renders the UI and reacts to state changes. It does *not* contain business logic.
-- **Key Components**:
-  - `MainActivity.kt`: The single Activity entry point hosting the Navigation graph.
-  - `CameraScreen.kt`: Composable handling the Camera UI layout.
-  - `CameraScreen.kt`: Composable handling the Camera UI layout.
-  - `CameraLayouts.kt`: Implementation of the "Quad-Border Cockpit" (Top, Bottom, Side bars).
-  - `CameraXViewfinder`: Native Compose viewfinder (replaced legacy PreviewView).
-  - `CameraOverlays.kt`: Stateless composables for drawing visual aids (Grid, Level).
-  - `LauncherScreen.kt`: The main dashboard.
+### 1. Feature Layer (Feature-Based Packaging)
+The app is organized into high-level features to ensure scalability. Each feature encapsulates its own UI, Logic, and specific Data requirements.
 
-### 2. Logic Layer (ViewModel / Manager)
-- **Technology**: Kotlin Flow, Coroutines
-- **Responsibility**: Manages state, handles business logic, and interacts with Repositories.
-- **Key Components**:
-  - `CameraManager.kt`: Acts as a ViewModel/Controller for CameraX. It encapsulates camera binding, capture logic, and device control, exposing `StateFlows` to the UI.
-  - `*ViewModel.kt`: Standard ViewModels for other features (planned).
+- **`com.kaimera.tablet.features.camera`**: Core photography/videography functionality.
+- **`com.kaimera.tablet.features.launcher`**: Central dashboard and applet navigation.
+- **`com.kaimera.tablet.features.files`**: Media management and gallery viewing.
+- **`com.kaimera.tablet.features.[browser|notes|downloads]`**: Planned expansion applets.
 
-### 3. Data Layer (Model / Repository)
-- **Technology**: DataStore, Room (future)
-- **Responsibility**: Abstraction of data sources. Provides a clean API for data access.
+### 2. Core Layer (Infrastructure)
+Shared components and base logic accessible by all features.
+
+- **`com.kaimera.tablet.core.ui`**: Standard UI components, themes, and shared composables.
+- **`com.kaimera.tablet.core.data`**: Shared repositories (e.g., `UserPreferencesRepository`) and DI modules.
+- **`com.kaimera.tablet.core.di`**: Hilt modules defining dependency providers.
+
+### 3. Structural Breakdown
+
+- **Technology**: Jetpack Compose, Hilt (DI), Kotlin Flow
+- **Pattern**: MVVM with Unidirectional Data Flow (UDF)
 - **Key Components**:
-  - `UserPreferencesRepository.kt`: Handles persistent storage of user settings (Grid size, Resolution, etc.) using Jetpack DataStore.
+  - `MainActivity.kt`: NavHost entry point.
+  - `FeatureViewModel.kt`: Feature-scoped business logic and state management.
+  - `FeatureScreen.kt`: Composable UI entry point for a feature.
+  - `Repository.kt`: Data access abstraction.
 
 ## Design Patterns
 
-### Repository Pattern
-Used to abstract data sources. For example, `UserPreferencesRepository` hides the details of `DataStore` interaction, providing simple `Flow<T>` properties and `suspend` functions to the rest of the app.
-
-### Observer Pattern
-Heavily used via **Kotlin Flows** and **StateFlows**. The UI observes state changes (e.g., `cameraManager.zoomState.collectAsState()`) and reacts automatically, ensuring the UI always reflects the current data.
+### Dependency Injection (Hilt)
+We use **Dagger Hilt** for dependency injection. This simplifies the provision of singleton resources (like `UserPreferencesRepository`) and makes ViewModels easier to test by injecting their dependencies.
+- **`@HiltAndroidApp`**: Required on the `Application` class.
+- **`@AndroidEntryPoint`**: Required on `MainActivity`.
+- **`@HiltViewModel`**: Used for all ViewModels to enable constructor injection.
 
 ### Unidirectional Data Flow (UDF)
-State flows down from the Logic Layer to the UI Layer. Events (user actions) flow up from the UI Layer to the Logic Layer.
-- **State**: `ViewModel` -> `UI`
-- **Events**: `UI` -> `ViewModel`
-
-### Delegation
-The `CameraScreen` delegates all complex camera operations to `CameraManager`. This keeps the UI code clean ("dumb UI") and focused solely on layout and rendering.
+State flows down from the ViewModel to the UI. Events (user actions) flow up from the UI to the ViewModel.
+- **State**: `ViewModel` -> `UI` (`StateFlow.collectAsStateWithLifecycle()`)
+- **Events**: `UI` -> `ViewModel` (via function calls)
 
 ## Technology Stack & Dependencies
 
@@ -74,15 +71,15 @@ The `CameraScreen` delegates all complex camera operations to `CameraManager`. T
 ## Directory Structure
 ```
 app/src/main/java/com/kaimera/tablet/
-├── MainActivity.kt        // Entry point
-├── camera/                // Camera logic
-│   └── CameraManager.kt
-├── data/                  // Data layer
-│   └── UserPreferencesRepository.kt
-├── ui/                    // UI Composable screens
-│   ├── CameraScreen.kt
-│   ├── CameraLayouts.kt
-│   ├── CameraOverlays.kt
-│   └── LauncherScreen.kt
-└── theme/                 // App theme & styling
+├── KaimeraApplication.kt  // Hilt @HiltAndroidApp
+├── MainActivity.kt        // Entry point & Navigation
+├── core/                  // Shared infrastructure
+│   ├── data/              // Shared Repositories & DataSources
+│   ├── di/                // Hilt Modules
+│   └── ui/                // Shared Composables & Theme
+└── features/              // Feature-specific code
+    ├── camera/            // Camera feature (UI + Manager)
+    ├── launcher/          // Launcher feature
+    ├── files/             // Media gallery feature
+    └── browser/           // Web browsing feature
 ```

@@ -10,11 +10,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun ${FEATURE_NAME}Screen(
-    viewModel: ${FEATURE_NAME}ViewModel = viewModel() // Note: You might need a Factory or Hilt here
+    viewModel: ${FEATURE_NAME}ViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
