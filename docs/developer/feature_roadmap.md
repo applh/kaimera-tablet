@@ -65,19 +65,52 @@ We follow an **Agile/MVP** methodology, delivering value in 2-week sprint-sized 
 - **Feature**: Initial support for Vendor Extensions (HDR, Night, Bokeh, Face Retouch, Auto).
 - **Implementation**: `ExtensionsManager` integration with dynamic availability check.
 
-## Phase 4: Intelligence & Polishing
-- **AI Scene Detection (Completed)**: Real-time subject labeling (Food, Nature, Portrait, etc.) with UI badge.
-- **Gallery "Film Strip"**: Horizontal film strip of recent photos at the bottom of the camera view (Dynamic).
+## Phase 4: Adaptive & Responsive UI (New)
+*Goal: Ensure the camera experience is flawless across all tablet postures, split-screen modes, and floating windows.*
+
+### 4.1 Liquid Layouts (AdaptiveCameraLayout)
+- **Problem**: Current UI assumes a landscape-oriented rectangular window. In constrained floating windows (e.g., square or tall), controls overlap or become unusable.
+- **Solution**: Implement a responsive state-machine that switches layout strategies based on window Aspect Ratio, not just Device Orientation.
+    - **Landscape Window (> 1.2 AR)**: Standard "Sidebar" layout (Controls on Right).
+    - **Portrait Window (< 0.8 AR)**: "Bottom Bar" layout (Controls at Bottom).
+    - **Square/Compact Window**: specific "Compact" variation with collapsed menus.
+
+### 4.2 Smart Viewfinder Scaling
+- **Problem**: When resizing a window freely, the CameraX Preview surface may stretch or crop aggressively to fill usage, potentially misleading the user about the actual capture framing.
+- **Feature**: Dynamic `ScaleType` switching.
+    - **Default**: `FILL_CENTER` (Immersive, but potential cropping).
+    - **Framing Priority**: When enabled (or in small windows), switch to `FIT_CENTER` (Letterboxing) to show the *exact* sensor output, ensuring 100% framing accuracy.
+
+### 4.3 Dynamic Sizing
+- **Refinement**: Replace fixed `dp` sizes for buttons and sliders with `weight` based or `%` based sizing in compact views to ensure all controls remain accessible even in 300x300dp micro-windows.
 
 ---
 
-## Proposed MVP Sprint (Completed)
+# UX Assessment: Floating Windows & Responsiveness
 
-**Objective**: Complete Phase 1 to establish a solid base.
+## 1. Current State Analysis
+- **Layout Rigidity**: The current `CameraScreen.kt` heavily favors a landscape tablet experience. The sidebars are hard-coded to the right.
+- **Window Resizing**: In split-screen or freeform mode, if the window becomes too narrow, the UI elements overlap the viewfinder, or the viewfinder crops awkwardly.
+- **Aspect Ratio Mismatch**: Capturing a 4:3 photo in a 16:9 window (or vice-versa) relies on `FILL_CENTER`, which hides significant portions of the scene.
 
-1.  **Refactor Architecture**: Introduce `UserPreferencesRepository` (DataStore). [Done]
-2.  **Implement Flash & Torch**: Add UI and CameraX bindings. [Done]
-3.  **Implement Tap-to-Focus**: Add touch listener and focus logic. [Done]
-4.  **Connect Settings**: Verify Grid draws lines and Timer delays capture. [Done]
-5.  **Video Recording**: Implement MediaStore logic and UI. [Done]
-6.  **Modular Refactor**: Split logic into `CameraManager` and state-driven UI. [Done]
+## 2. Identified Pain Points
+1.  **"Squashed" Controls**: In 50/50 split screen (portrait orientation), the sidebar consumes ~20-30% of horizontal space, leaving a tall, thin strip for the camera preview.
+2.  **Unreachable UI**: In multi-window mode, if the window is small, touch targets (sliders) may become too small or too close together.
+3.  **Orientation Confusion**: Rotating the device while in a fixed-orientation floating window can cause icon rotation logic to detach from the actual window orientation.
+
+## 3. Recommended Improvements (Prioritized)
+
+### Priority A: Implement `AdaptiveCameraLayout` logic
+**Effect**: High
+**Effort**: Medium
+Refactor `CameraScreen` to choose between `Row` (Landscape) and `Column` (Portrait) top-level containers based on `BoxWithConstraints` measurements. This single change fixes 80% of split-screen usability issues.
+
+### Priority B: "Compact Mode" for Controls
+**Effect**: Medium
+**Effort**: Low
+When `min(width, height) < 400dp`, automatically hide auxiliary controls (Focus Peaking, Grid toggles) behind a "More" fab or menu to declutter the viewfinder.
+
+### Priority C: Viewfinder Letterboxing Option
+**Effect**: High (for Pro users)
+**Effort**: Low
+Allow double-tapping the viewfinder to toggle between "Fill" (Immersive) and "Fit" (Accurate Framing). This is crucial for floating windows where the window aspect ratio rarely matches the sensor aspect ratio (4:3).

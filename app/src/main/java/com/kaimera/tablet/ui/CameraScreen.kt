@@ -531,391 +531,173 @@ fun CameraContent(
             }
         }
 
-        // Overlay Controls - Updated Polished Layout
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding() // Add margin for system bars
-                .padding(vertical = 16.dp), // Extra margin for aesthetics
-            horizontalArrangement = Arrangement.End
-        ) {
-            Spacer(modifier = Modifier.weight(1f))
+        // ADAPTIVE OVERLAY CONTROLS
+        // Determine Layout Strategy
+        val isLandscapeLayout = !isPortraitWindow
 
-            // Sidebar Surface
+        if (isLandscapeLayout) {
+            // SIDEBAR LAYOUT (Right)
             Row(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 1. Zoom and Timelapse Column
-                Column(
-                    modifier = Modifier.fillMaxHeight(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Vertical Zoom Slider Column (Fixed at 30% size)
-                    val zoomAreaHeight = minOf(maxWidthDp, maxHeightDp) * 0.3f
-                    Column(
-                        modifier = Modifier.height(zoomAreaHeight),
-                        verticalArrangement = Arrangement.SpaceBetween,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(Icons.Filled.ZoomIn, "Zoom In", tint = Color.White, modifier = Modifier.size(20.dp))
-                        
-                        // Vertical Slider with layout rotation to fill available space
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .width(64.dp), 
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Slider(
-                                value = zoomRatio,
-                                onValueChange = { 
-                                    cameraManager.setZoomRatio(it)
-                                },
-                                valueRange = 1f..maxZoomRatio,
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        rotationZ = -90f
-                                    }
-                                    .layout { measurable, constraints ->
-                                        val placeable = measurable.measure(
-                                            androidx.compose.ui.unit.Constraints(
-                                                minWidth = constraints.maxHeight,
-                                                maxWidth = constraints.maxHeight,
-                                                minHeight = constraints.minWidth,
-                                                maxHeight = constraints.maxWidth
-                                            )
-                                        )
-                                        layout(placeable.height, placeable.width) {
-                                            placeable.place(
-                                                x = -(placeable.width - placeable.height) / 2,
-                                                y = (placeable.width - placeable.height) / 2
-                                            )
-                                        }
-                                    }
-                                    .width(64.dp), 
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Color.White,
-                                    activeTrackColor = Color.White,
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.5f)
-                                )
-                            )
-                        }
-                        
-                        Icon(Icons.Filled.ZoomOut, "Zoom Out", tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
-
-                    if (timelapseMode && cameraMode == 1) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        // Interval Selector "Mini-Pro"
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Filled.History, contentDescription = null, tint = Color.Red, modifier = Modifier.size(16.dp))
-                            listOf(500L, 1000L, 2000L, 5000L).forEach { interval ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(
-                                            if (timelapseInterval == interval) Color.Red else Color.Black.copy(alpha = 0.5f),
-                                            CircleShape
-                                        )
-                                        .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                                        .clickable { onTimelapseIntervalChange(interval) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "${interval/1000f}s".replace(".0", ""),
-                                        color = Color.White,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            
-                // 2. Main Controls Column
-                Column(
-                    modifier = Modifier.fillMaxHeight(),
-                    verticalArrangement = Arrangement.SpaceBetween, // Distribute Top/Center/Bottom
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // TOP: Flash, Flip
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                         IconButton(onClick = { 
-                            val newMode = (flashModePref + 1) % 3 
-                            onFlashModeChange(newMode)
-                        }) {
-                            Icon(
-                                imageVector = when(flashModePref) {
-                                    1 -> Icons.Filled.FlashOn
-                                    2 -> Icons.Filled.FlashOff
-                                    else -> Icons.Filled.FlashAuto
-                                },
-                                contentDescription = "Flash",
-                                tint = Color.White
-                            )
-                        }
-
-                        // Torch Toggle
-                        IconButton(onClick = { 
-                            onTorchChange(!torchEnabled)
-                        }) {
-                            Icon(
-                                imageVector = if (torchEnabled) Icons.Filled.FlashlightOn else Icons.Filled.FlashlightOff, 
-                                contentDescription = "Torch", 
-                                tint = if (torchEnabled) Color.Yellow else Color.White
-                            )
-                        }
-
-                        // AI Scene Detection Toggle
-                        IconButton(onClick = { 
-                            onAiSceneDetectionChange(!aiSceneDetection)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Psychology, 
-                                contentDescription = "AI Scene Detection", 
-                                tint = if (aiSceneDetection) Color.Magenta else Color.White
-                            )
-                        }
-                        
-                         // Extension Toggle (Only if extensions are available)
-                        if (supportedExtensions.isNotEmpty() && cameraMode == 0) {
-                             IconButton(onClick = { 
-                                // Cycle: None -> Ext 1 -> Ext 2 -> ... -> None
-                                val currentIndex = supportedExtensions.indexOf(extensionMode)
-                                extensionMode = if (currentIndex < supportedExtensions.size - 1) {
-                                    supportedExtensions[currentIndex + 1]
+                CameraControlPanel(
+                    orientation = PanelOrientation.Vertical,
+                    zoomRatio = zoomRatio,
+                    maxZoomRatio = maxZoomRatio,
+                    flashModePref = flashModePref,
+                    torchEnabled = torchEnabled,
+                    aiSceneDetection = aiSceneDetection,
+                    supportedExtensions = supportedExtensions,
+                    extensionMode = extensionMode,
+                    cameraMode = cameraMode,
+                    timelapseMode = timelapseMode,
+                    scanQrCodes = scanQrCodes,
+                    lensFacing = lensFacing,
+                    isProMode = isProMode,
+                    exposureIndex = exposureIndex,
+                    exposureRange = exposureRange,
+                    exposureStep = exposureStep,
+                    awbMode = awbMode,
+                    isRecording = isRecording,
+                    timerSeconds = timerSeconds,
+                    isTimerRunning = isTimerRunning,
+                    timelapseInterval = timelapseInterval,
+                    lastImageUri = lastImageUri,
+                    isPaused = isPaused,
+                    timelapseFrames = timelapseFrames,
+                    recordingDurationNanos = recordingDurationNanos,
+                    onZoomChange = { cameraManager.setZoomRatio(it) },
+                    onTimelapseIntervalChange = { 
+                        onTimelapseIntervalChange(it)
+                        cameraManager.setTimelapseInterval(it)
+                    },
+                    onFlashModeChange = { onFlashModeChange(it) },
+                    onTorchChange = { onTorchChange(it) },
+                    onAiSceneDetectionChange = { onAiSceneDetectionChange(it) },
+                    onExtensionModeChange = { extensionMode = it },
+                    onTimelapseModeChange = { onTimelapseModeChange(it) },
+                    onScanQrCodesChange = { onScanQrCodesChange(it) },
+                    onCameraLensChange = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK },
+                    onProModeToggle = { isProMode = !isProMode },
+                    onExposureChange = { cameraManager.setExposureCompensationIndex(it) },
+                    onAwbModeChange = { onAwbModeChange(it) },
+                    onCameraModeChange = { cameraMode = it },
+                    onCapture = {
+                         if (cameraMode == 1) {
+                            if (isRecording) {
+                                cameraManager.stopVideoRecording()
+                            } else {
+                                if (timerSeconds > 0) {
+                                    isTimerRunning = true
+                                    timerCountdown = timerSeconds
                                 } else {
-                                    ExtensionMode.NONE
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.AutoAwesome, 
-                                    contentDescription = "Extensions", 
-                                    tint = if (extensionMode == ExtensionMode.NONE) Color.White else Color.Yellow
-                                )
-                            }
-                        }
-                        
-                        // Timelapse Toggle (Only in Video Mode)
-                        if (cameraMode == 1) {
-                            IconButton(onClick = { 
-                                onTimelapseModeChange(!timelapseMode)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Timelapse, 
-                                    contentDescription = "Timelapse", 
-                                    tint = if (timelapseMode) Color.Red else Color.White
-                                )
-                            }
-                        }
-
-                        // QR Code Scanner Toggle
-                         IconButton(onClick = { 
-                            onScanQrCodesChange(!scanQrCodes)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.QrCodeScanner, 
-                                contentDescription = "QR Scanner", 
-                                tint = if (scanQrCodes) Color.Cyan else Color.White
-                            )
-                        }
-                        
-                         IconButton(onClick = {
-                            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
-                        }) {
-                            Icon(Icons.Filled.Cameraswitch, contentDescription = "Switch Camera", tint = Color.White)
-                        }
-                    }
-
-                    // CENTER: Shutter, Mode, & Pro Controls
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        
-                        // Pro Control Panel (Visible only in Pro Mode)
-                        if (isProMode) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                    .padding(8.dp)
-                            ) {
-                                Text(
-                                    text = "EV: ${
-                                        if (exposureStep.numerator != 0) 
-                                            "%.1f".format(exposureIndex * exposureStep.numerator.toFloat() / exposureStep.denominator) 
-                                        else "0.0"
-                                    }",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                                Slider(
-                                    value = exposureIndex.toFloat(),
-                                    onValueChange = { cameraManager.setExposureCompensationIndex(it.roundToInt()) },
-                                    valueRange = exposureRange.lower.toFloat()..exposureRange.upper.toFloat(),
-                                    modifier = Modifier.width(120.dp)
-                                )
-                                
-                                // White Balance Presets
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(top = 4.dp)
-                                ) {
-                                    val modes = listOf(
-                                        CaptureRequest.CONTROL_AWB_MODE_AUTO to "Auto",
-                                        CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT to "Sunny",
-                                        CaptureRequest.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT to "Cloud",
-                                        CaptureRequest.CONTROL_AWB_MODE_FLUORESCENT to "Fluo",
-                                        CaptureRequest.CONTROL_AWB_MODE_INCANDESCENT to "Inc"
-                                    )
-                                    for ((mode, label) in modes) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(if (awbMode == mode) Color.Yellow.copy(alpha=0.3f) else Color.Transparent)
-                                                .clickable { onAwbModeChange(mode) }
-                                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                                        ) {
-                                            Text(label, color = if (awbMode == mode) Color.Yellow else Color.White, style = MaterialTheme.typography.labelSmall)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Compact Mode Switch & Pro Toggle
-                        Row(
-                            modifier = Modifier
-                                .background(Color.DarkGray.copy(alpha = 0.5f), RoundedCornerShape(20.dp)),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CompactModeButton(
-                                icon = Icons.Filled.PhotoCamera,
-                                isSelected = cameraMode == 0,
-                                onClick = { cameraMode = 0 }
-                            )
-                            CompactModeButton(
-                                icon = Icons.Filled.Videocam,
-                                isSelected = cameraMode == 1,
-                                onClick = { cameraMode = 1 }
-                            )
-                             CompactModeButton(
-                                icon = Icons.Filled.Settings, // Using Settings icon as fallback for Tune
-                                isSelected = isProMode,
-                                onClick = { isProMode = !isProMode }
-                            )
-                        }
-
-                        // Shutter Button
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                             IconButton(
-                                onClick = {
-                                    if (cameraMode == 1) {
-                                        if (isRecording) {
-                                            cameraManager.stopVideoRecording()
-                                        } else {
-                                            if (timerSeconds > 0) {
-                                                isTimerRunning = true
-                                                timerCountdown = timerSeconds
-                                            } else {
-                                                if (timelapseMode) {
-                                                    cameraManager.startTimelapseRecording(timelapseInterval) { uri ->
-                                                        lastImageUri = uri
-                                                    }
-                                                } else {
-                                                    cameraManager.startVideoRecording { uri ->
-                                                        lastImageUri = uri
-                                                    }
-                                                }
-                                            }
-                                        }
+                                    if (timelapseMode) {
+                                        cameraManager.startTimelapseRecording(timelapseInterval) { uri -> lastImageUri = uri }
                                     } else {
-                                        if (timerSeconds > 0) {
-                                            isTimerRunning = true
-                                            timerCountdown = timerSeconds
-                                        } else {
-                                            cameraManager.takePhoto { uri ->
-                                                 lastImageUri = uri
-                                            }
-                                        }
+                                        cameraManager.startVideoRecording { uri -> lastImageUri = uri }
                                     }
-                                },
-                                modifier = Modifier.size(80.dp)
-                            ) {
-                                Icon(
-                                    imageVector = when {
-                                        cameraMode == 1 && isRecording -> Icons.Filled.Stop
-                                        cameraMode == 1 -> Icons.Filled.Videocam
-                                        else -> Icons.Filled.PhotoCamera
-                                    },
-                                    contentDescription = "Capture",
-                                    tint = if (cameraMode == 1) Color.Red else Color.White,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                            
-                            // Recording Duration & Pause Control
-                            if (cameraMode == 1 && isRecording) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically, 
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(top = 8.dp)
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            if (isPaused) cameraManager.resumeVideoRecording()
-                                            else cameraManager.pauseVideoRecording()
-                                        },
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .background(Color.White.copy(alpha=0.3f), CircleShape)
-                                    ) {
-                                        Icon(
-                                            imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                                            contentDescription = if (isPaused) "Resume" else "Pause",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                    
-                                    Text(
-                                        text = if (isTimelapseActive) "Frames: $timelapseFrames" else formatDuration(recordingDurationNanos),
-                                        color = if (isPaused) Color.Yellow else Color.Red,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
                                 }
                             }
+                        } else {
+                            if (timerSeconds > 0) {
+                                isTimerRunning = true
+                                timerCountdown = timerSeconds
+                            } else {
+                                cameraManager.takePhoto { uri -> lastImageUri = uri }
+                            }
                         }
-                    }
-
-                    // BOTTOM: Gallery (Aligned with Shutter somewhat or just at bottom)
-                    // Pushed to bottom by SpaceBetween
-                    IconButton(
-                        onClick = onNavigateToGallery,
-                        modifier = Modifier
-                            .size(50.dp)
-                            .border(2.dp, Color.White, CircleShape)
-                            .background(Color.DarkGray, CircleShape)
-                    ) {
-                        if (lastImageUri != null) {
-                            coil.compose.AsyncImage(
-                                model = lastImageUri,
-                                contentDescription = "Gallery",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape)
-                            )
+                    },
+                    onPauseRecording = { cameraManager.pauseVideoRecording() },
+                    onResumeRecording = { cameraManager.resumeVideoRecording() },
+                    onNavigateToGallery = onNavigateToGallery
+                )
+            }
+        } else {
+            // BOTTOM BAR LAYOUT (Portrait / Split Screen)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CameraControlPanel(
+                    orientation = PanelOrientation.Horizontal,
+                    zoomRatio = zoomRatio,
+                    maxZoomRatio = maxZoomRatio,
+                    flashModePref = flashModePref,
+                    torchEnabled = torchEnabled,
+                    aiSceneDetection = aiSceneDetection,
+                    supportedExtensions = supportedExtensions,
+                    extensionMode = extensionMode,
+                    cameraMode = cameraMode,
+                    timelapseMode = timelapseMode,
+                    scanQrCodes = scanQrCodes,
+                    lensFacing = lensFacing,
+                    isProMode = isProMode,
+                    exposureIndex = exposureIndex,
+                    exposureRange = exposureRange,
+                    exposureStep = exposureStep,
+                    awbMode = awbMode,
+                    isRecording = isRecording,
+                    timerSeconds = timerSeconds,
+                    isTimerRunning = isTimerRunning,
+                    timelapseInterval = timelapseInterval,
+                    lastImageUri = lastImageUri,
+                    isPaused = isPaused,
+                    timelapseFrames = timelapseFrames,
+                    recordingDurationNanos = recordingDurationNanos,
+                     onZoomChange = { cameraManager.setZoomRatio(it) },
+                    onTimelapseIntervalChange = { 
+                        onTimelapseIntervalChange(it)
+                        cameraManager.setTimelapseInterval(it)
+                    },
+                    onFlashModeChange = { onFlashModeChange(it) },
+                    onTorchChange = { onTorchChange(it) },
+                    onAiSceneDetectionChange = { onAiSceneDetectionChange(it) },
+                    onExtensionModeChange = { extensionMode = it },
+                    onTimelapseModeChange = { onTimelapseModeChange(it) },
+                    onScanQrCodesChange = { onScanQrCodesChange(it) },
+                    onCameraLensChange = { lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK },
+                    onProModeToggle = { isProMode = !isProMode },
+                    onExposureChange = { cameraManager.setExposureCompensationIndex(it) },
+                    onAwbModeChange = { onAwbModeChange(it) },
+                    onCameraModeChange = { cameraMode = it },
+                    onCapture = {
+                         if (cameraMode == 1) {
+                            if (isRecording) {
+                                cameraManager.stopVideoRecording()
+                            } else {
+                                if (timerSeconds > 0) {
+                                    isTimerRunning = true
+                                    timerCountdown = timerSeconds
+                                } else {
+                                    if (timelapseMode) {
+                                        cameraManager.startTimelapseRecording(timelapseInterval) { uri -> lastImageUri = uri }
+                                    } else {
+                                        cameraManager.startVideoRecording { uri -> lastImageUri = uri }
+                                    }
+                                }
+                            }
+                        } else {
+                            if (timerSeconds > 0) {
+                                isTimerRunning = true
+                                timerCountdown = timerSeconds
+                            } else {
+                                cameraManager.takePhoto { uri -> lastImageUri = uri }
+                            }
                         }
-                    }
-                }
+                    },
+                    onPauseRecording = { cameraManager.pauseVideoRecording() },
+                    onResumeRecording = { cameraManager.resumeVideoRecording() },
+                    onNavigateToGallery = onNavigateToGallery
+                )
             }
         }
             
@@ -959,37 +741,6 @@ fun CameraContent(
     }
 }
 
-@Composable
-fun CompactModeButton(
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(8.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(20.dp)
-        )
-    }
-}
-
-
-// Legacy functions removed.
-
-private fun formatDuration(nanos: Long): String {
-    val seconds = java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(nanos)
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
-    return String.format("%02d:%02d", minutes, remainingSeconds)
-}
 
 private fun getLastImageUri(context: Context): android.net.Uri? {
     val projection = arrayOf(
@@ -1014,3 +765,4 @@ private fun getLastImageUri(context: Context): android.net.Uri? {
         }
     }
 }
+
