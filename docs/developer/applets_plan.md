@@ -10,12 +10,19 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 - **WebView Integration**: Core browsing engine.
 - **Navigation Controls**: Back, Forward, Refresh, and Home buttons.
 - **Loading Progress**: Visual indicator for page load status.
+- **Context Menu**: Long-press support for Links, Images, and Videos (v0.0.36).
+- **Download Integration**: Seamlessly hand off downloads to the Downloads applet (v0.0.35).
+
+### Activated Web Features
+- **JavaScript Enabled**: Full support for modern interactive web content and video players.
+- **DOM Storage**: Enabled `localStorage` and `sessionStorage` for site persistence.
+- **Persistent State**: Automatically remembers and reloads the last visited URL.
+- **Download Management**: Direct integration with system `DownloadManager` for files and media.
 
 ### Future Enhancements
 - **Bookmarks**: Save and manage favorite sites.
 - **Incognito Mode**: Private browsing without history.
 - **Multiple Tabs**: Support for browsing multiple sites simultaneously.
-- **Download Integration**: Seamlessly hand off downloads to the Downloads applet.
 
 ---
 
@@ -57,7 +64,7 @@ This document outlines the expansion of the Kaimera Tablet ecosystem with three 
 ## Agile Roadmap: Phase 5 & 6
 
 ### Phase 5: Multi-Utility Expansion (v0.1.0+)
-- **v0.0.31**: Browser MVP implementation (Completed).
+- **v0.0.36**: Browser MVP implementation (Completed).
 - **v0.0.35**: Downloads MVP implementation and Browser integration (Completed).
 - **v0.0.40**: Notes MVP implementation.
 
