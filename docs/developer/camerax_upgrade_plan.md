@@ -19,6 +19,14 @@ CameraX 1.5.0+ stabilizes the `camera-compose` artifact, allowing us to remove t
     3.  Connect the `SurfaceProvider` from `Viewfinder` to the `Preview` use case.
     4.  Verify rotation and aspect ratio handling (often improved in native Compose).
 
+## 3. Known Issues & Blockers
+
+### ⚠️ Preview Stabilization Conflict
+*   **Issue**: Enabling `Preview.Builder.setPreviewStabilizationEnabled(true)` causes a **blank viewfinder** (black screen) on startup (Cold Start).
+*   **Detection**: Verify by reverting the line: if viewfinder returns, this is the cause.
+*   **Root Cause**: Device driver incompatibility or conflict with `Camera2Interop` settings (FPS ranges).
+*   **Status**: Feature is **DEFERRED** until stability is proven. Do *not* enable blindly.
+
 ## 6. Phase C: Ultra HDR (Completed)
 
 *   **Status**: ✅ Implemented 10-bit HDR checks and configuration in `CameraManager`.
@@ -33,7 +41,7 @@ CameraX 1.5.0+ stabilizes the `camera-compose` artifact, allowing us to remove t
 
 CameraX 1.5.0 formalized High Dynamic Range and High Frame Rate video.
 
-*   **Status**: ✅ Implemented native safe-check for High FPS support.
+*   **Status**: ✅ Implemented Native 60 FPS support via `setTargetFrameRate`.
 *   **Goal**: Native 60fps/120fps recording without fragile workarounds.
 *   **Steps**:
     1.  Resolve `Camera2CameraInfo` from `CameraInfo`.
@@ -45,7 +53,7 @@ CameraX 1.5.0 formalized High Dynamic Range and High Frame Rate video.
 *   **Status**: ✅ Enabled Preview and Video stabilization in v0.0.25+.
 *   **Goal**: Reduce shakiness in handheld tablet video.
 *   **Steps**:
-    1.  Enable `Preview.Builder.setPreviewStabilizationEnabled(true)`.
+    1.  Enable `Preview.Builder.setPreviewStabilizationEnabled(true)` **(BLOCKED: See Known Issues)**.
     2.  Enable `VideoCapture.Builder.setVideoStabilizationEnabled(true)`.
     3.  Check `CameraInfo.isPreviewStabilizationSupported`.
 

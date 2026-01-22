@@ -168,7 +168,9 @@ class CameraManager(private val context: Context) {
         val recorder = Recorder.Builder()
             .setQualitySelector(selector)
             .build()
-        videoCapture = VideoCapture.withOutput(recorder)
+        videoCapture = VideoCapture.Builder(recorder)
+            .setTargetFrameRate(android.util.Range(targetFps, targetFps))
+            .build()
 
         val windowRatio = windowSize.width.toFloat() / windowSize.height.toFloat()
         val isPortrait = windowSize.width < windowSize.height
@@ -189,7 +191,6 @@ class CameraManager(private val context: Context) {
             .setResolutionSelector(resolutionSelector)
 
         Camera2Interop.Extender(previewBuilder)
-            .setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, android.util.Range(targetFps, targetFps))
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
