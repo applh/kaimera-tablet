@@ -63,6 +63,12 @@ To cleanup, commit, and tag a release in one step:
 .agent/skills/AndroidDevelopment/scripts/release_workflow.sh "Release message" v0.0.5
 ```
 
+### 7. Dependency Management
+**CRITICAL**: Before starting any major feature (especially involving media/system APIs), verify that you are using the latest stable versions of related libraries.
+- Check [Maven Central](https://mvnrepository.com) or [Google Maven](https://maven.google.com).
+- **Why?**: Major Android releases (like Android 15/API 35) often require corresponding library updates (e.g., CameraX 1.5.0+) to function correctly on new hardware.
+
+
 ## Troubleshooting
 
 - **"Resource not found"**: Ensure you have pulled the full `res/` directory from git.

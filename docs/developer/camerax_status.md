@@ -6,6 +6,8 @@
 - **Wrapper**: `CameraManager` wraps all CameraX interactions.
 - **Lifecycle**: Bound to `LifecycleOwner` (Fragment/Activity).
 - **Executor**: Dedicated single-thread executor for camera operations.
+- **Upgrade Plan**: See [CameraX 1.5+ Upgrade Plan](camerax_upgrade_plan.md).
+
 
 ### UseCases Implemented
 

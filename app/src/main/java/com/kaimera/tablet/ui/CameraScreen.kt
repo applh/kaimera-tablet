@@ -16,7 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.DisposableEffect
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
-import androidx.camera.view.PreviewView
+import androidx.camera.compose.CameraXViewfinder
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+
 import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -278,7 +281,8 @@ fun CameraContent(
     val detectedScene by cameraManager.detectedScene.collectAsState()
     
     // View State (for dynamic rebinding)
-    var previewView by remember { mutableStateOf<PreviewView?>(null) }
+    val surfaceRequest by cameraManager.surfaceRequest.collectAsState()
+    
     
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var cameraMode by remember { mutableStateOf(0) } // 0: Photo, 1: Video
@@ -394,13 +398,11 @@ fun CameraContent(
         val maxHeightDp = maxHeight
         val isPortraitWindow = maxHeight > maxWidth
 
-        LaunchedEffect(lensFacing, cameraMode, previewView, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, aiSceneDetection, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
-            val view = previewView ?: return@LaunchedEffect
+        LaunchedEffect(lensFacing, cameraMode, photoResolutionTier, videoResolutionTier, videoFps, jpegQuality, captureMode, extensionMode, scanQrCodes, aiSceneDetection, awbMode, torchEnabled, maxWidthDp, maxHeightDp) {
             val windowSize = android.util.Size(maxWidthDp.value.toInt(), maxHeightDp.value.toInt())
             if (cameraMode == 0) {
                 cameraManager.bindPhotoPreview(
                     lifecycleOwner, 
-                    view, 
                     lensFacing, 
                     flashMode = flashModePref,
                     photoResolutionTier = photoResolutionTier,
@@ -416,7 +418,6 @@ fun CameraContent(
             } else {
                 cameraManager.bindVideoPreview(
                     lifecycleOwner, 
-                    view, 
                     lensFacing, 
                     videoResolutionTier = videoResolutionTier,
                     targetFps = videoFps,
@@ -431,22 +432,24 @@ fun CameraContent(
 
 
     // Note: BoxWithConstraints replaces the outer Box
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                PreviewView(ctx).also { view ->
-                    previewView = view
-                    view.setOnTouchListener { v, event ->
-                        if (event.action == android.view.MotionEvent.ACTION_UP) {
-                            cameraManager.focus(view, event.x, event.y)
-                            v.performClick()
+        if (surfaceRequest != null) {
+            CameraXViewfinder(
+                surfaceRequest = surfaceRequest!!,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            focusPoint = offset
+                            cameraManager.focus(
+                                size.width.toFloat(),
+                                size.height.toFloat(),
+                                offset.x,
+                                offset.y
+                            )
                         }
-                        true
                     }
-                }
-            },
-            update = { }
-        )
+            )
+        }
 
         // Camera Overlays (Grid, Level, Focus)
         CameraOverlays(

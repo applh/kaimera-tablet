@@ -131,9 +131,13 @@ class CameraManager(private val context: Context) {
         _supportedExtensions.value = available
     }
 
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    val surfaceRequest: StateFlow<SurfaceRequest?> = _surfaceRequest.asStateFlow()
+
+    // ... (existing flows)
+
     fun bindVideoPreview(
         lifecycleOwner: LifecycleOwner,
-        previewView: PreviewView,
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         videoResolutionTier: Int = 1, // 0: HD, 1: FHD, 2: 4K
         targetFps: Int = 30,
@@ -185,7 +189,7 @@ class CameraManager(private val context: Context) {
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
-        preview.setSurfaceProvider(previewView.surfaceProvider)
+        preview.setSurfaceProvider { request -> _surfaceRequest.value = request }
 
         val cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -210,7 +214,6 @@ class CameraManager(private val context: Context) {
 
     fun bindPhotoPreview(
         lifecycleOwner: LifecycleOwner,
-        previewView: PreviewView,
         lensFacing: Int = CameraSelector.LENS_FACING_BACK,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
         photoResolutionTier: Int = 1,
@@ -254,7 +257,7 @@ class CameraManager(private val context: Context) {
             .setCaptureRequestOption(CaptureRequest.CONTROL_AWB_MODE, whiteBalanceMode)
 
         val preview = previewBuilder.build()
-        preview.setSurfaceProvider(previewView.surfaceProvider)
+        preview.setSurfaceProvider { request -> _surfaceRequest.value = request }
 
         var cameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
             
@@ -355,8 +358,8 @@ class CameraManager(private val context: Context) {
         _torchEnabled.value = enabled
     }
 
-    fun focus(previewView: PreviewView, x: Float, y: Float) {
-        val factory = previewView.meteringPointFactory
+    fun focus(width: Float, height: Float, x: Float, y: Float) {
+        val factory = SurfaceOrientedMeteringPointFactory(width, height)
         val point = factory.createPoint(x, y)
         val action = FocusMeteringAction.Builder(point).build()
         camera?.cameraControl?.startFocusAndMetering(action)
